@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+                        <!-- Black text "e" -->
+                        <text x="10" y="60" font-family="Arial, sans-serif" font-size="50" fill="black">e</text>
+                        <!-- Red "S" -->
+                        <text x="40" y="60" font-family="Arial, sans-serif" font-size="50" fill="red">S</text> 
+                        <!-- Black text "erv" -->
+                        <text x="80" y="60" font-family="Arial, sans-serif" font-size="50" fill="black">erv</text>
+                    </svg>
