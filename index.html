@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <title>Eserv Online</title>
+</head>
+<body>
+    <div class="container">
+        <aside>
+            <div class="toggle">
+                <div class="logo">
+                    <img src="./eserv_logo.jpg">
+                </div>
+                <div class="close" id="close-btn">
+                    <span class="material-icons-sharp">
+                        close
+                    </span>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        home
+                    </span>
+                    <h3>Home</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        dashboard
+                    </span>
+                    <h3>Dasshboard</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        receipt_long
+                    </span>
+                    <h3>Project Status</h3>
+                </a>
+                <a href="#" class="active">
+                    <span class="material-icons-sharp">
+                        insights
+                    </span>
+                    <h3>TimeLog</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        mail_outline
+                    </span>
+                    <h3>Tickets</h3>
+                    <span class="message-count">27</span>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        inventory
+                    </span>
+                    <h3>Update Invoice</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        report_gmailerrorred
+                    </span>
+                    <h3>Reports</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        account_circle
+                    </span>
+                    <h3>Clients</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        people
+                    </span>
+                    <h3>Employees</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        group
+                    </span>
+                    <h3>Contractors</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        settings
+                    </span>
+                    <h3>Activity Codes</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        place
+                    </span>
+                    <h3>Locations</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        location_city
+                    </span>
+                    <h3>Work Locations</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        holiday_village
+                    </span>
+                    <h3>List of holidays </h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        lock_clock
+                    </span>
+                    <h3>Lock Time Entry</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        how_to_reg
+                    </span>
+                    <h3>Register</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        control_point
+                    </span>
+                    <h3>Change Point</h3>
+                </a>
+                <a href="#">
+                    <span class="material-icons-sharp">
+                        logout
+                    </span>
+                    <h3>Logout</h3>
+                </a>
+            </div>
+        </aside>
+    </div>
+    <script>
+        const sideMenu = document.querySelector('aside');
+const menuBtn = document.getElementById('menu-btn');
+const closeBtn = document.getElementById('close-btn');
+
+const darkMode = document.querySelector('.dark-mode');
+
+menuBtn.addEventListener('click', () => {
+    sideMenu.style.display = 'block';
+});
+
+closeBtn.addEventListener('click', () => {
+    sideMenu.style.display = 'none';
+});
+
+darkMode.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode-variables');
+    darkMode.querySelector('span:nth-child(1)').classList.toggle('active');
+    darkMode.querySelector('span:nth-child(2)').classList.toggle('active');
+})
+    </script>
+</body>
+</html>
