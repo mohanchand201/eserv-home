@@ -6,6 +6,30 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
     <link rel="stylesheet" href="./style.css">
     <title>Eserv Online</title>
+    <script>
+        function openDashboard() {
+            var location = "https://eserv.ltts.com/dashboard.html";
+            var title = "";
+            window.open(location, title, "toolbar=no,scrollbars=yes,resizable=yes,width=800,height=600");
+        }
+        var xmlHttp;
+        var redirect = false;
+        function createAjaxHttpRequest() {
+            try {
+                xmlHttp = new XMLHttpRequest();
+            } catch (e) {
+                try {
+                    xmlHttp = new ActiveXObject('Msxml2.XMLHTTP');
+                } catch (e) {
+                    try {
+                        xmlHttp = new ActiveXObject('Microsoft.XMLHTTP');
+                    } catch (e) {
+                        alert('Your browser does not support AJAX!'); return false;
+                    }
+                }
+            }
+        }
+        function handleStateChange() { try { if (xmlHttp.readyState == 1) { } if (xmlHttp.readyState == 4) { var output = 'false'; if (xmlHttp.status == 200) { output = xmlHttp.responseText; if (output == 'false') { redirect = false; } else redirect = true; } else { redirect = false; } } } catch (err) { } } function checkAppsStatus(url) { try { createAjaxHttpRequest(); xmlHttp.open('GET', '/servlets/CheckApplicationStatusServlet?FWURL=' + url, false); xmlHttp.onreadystatechange = handleStateChange; xmlHttp.send(null); } catch (err) { redirect = false; } } function callIntegeration(url, userid, password) { if (redirect == true) { document.loginform.action = url + '/servlets/ProxyServlet'; document.loginform.FWUserId.value = userid; document.loginform.FWPassword.value = password; document.loginform.submit(); } else { alert('The remote application is currently inaccessible, please try again later.'); } } function homeClick() { if (parent.body.isHome == 1) { return false; } } var message = "";</script>
 </head>
 <body>
     <div class="container">
