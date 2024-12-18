@@ -1,0 +1,353 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+
+	<link href="/assets/css/styles.css" rel="stylesheet" type="text/css" />
+	<link href="/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="/js/SessionTimeOut.js"></script>
+		<!-- Time Out Continue feature Start -->	
+	<script>	
+	var alerttimelimit = timeoutAlertDuration();	
+		setTimeout('sessionWarning()',alerttimelimit);
+		function sessionWarning() {
+		    var sFeatures="dialogHeight: " + 150 + "px; scroll=No";
+	   		var myObject = new Object();	
+	   		myObject.CurrentsessionID = '<FIELD="FWSession">';	   			   	
+	        var retValue = window.showModalDialog("/jsp/RestoreSession.jsp",myObject,sFeatures);
+	        if(retValue == 'tmedout'){
+	        	document.entryform.action = "/servlets/ProxyServlet";
+	        	document.entryform.submit();
+		     } 
+	        setTimeout('sessionWarning()', alerttimelimit);  
+		}	
+	</script>
+	<!-- Time Out Continue feature End -->
+	
+	
+	
+		<script type="text/javascript" src="/js/datepicker/datepickercontrol.js"></script>
+		<link type="text/css" rel="stylesheet" href="/js/datepicker/datepickercontrol_lnx.css">
+		<script src="/js/SingleDateValidation.js"></script>
+		<script src="/js/datevalidator.js"></script>
+		<script type="text/javascript" src="/js/AjaxUtils.js"></script>
+<script>
+			
+			var isN4, isIE;
+if ( parseInt(navigator.appVersion.charAt(0)) >= 4) {
+	isN4 = (navigator.appName == "Netscape") ? true : false;
+	isIE = (navigator.appName.indexOf("Microsoft") != -1) ? true : false;
+}
+
+function setControl (monthIndex, yearIndex)
+{
+	clearDays();
+	
+	var daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+	var daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+	
+	var month = document.entryform.FWMonth.options[monthIndex].value;
+	var year = document.entryform.FWYear.options[document.entryform.FWYear.selectedIndex].value;
+	if ( year > "89" ) {
+		year = "19" + year;
+	} else {
+		year = "20" + year;
+	}
+
+	var maxDays = daysInMonth[monthIndex];
+	if ( (month == '02') && (year % 4 == 0) ) {
+		maxDays = maxDays + 1;
+	}
+	
+	var today = new Date().getDate();
+	
+	for ( i = 0; i <= maxDays - 1; i++ ) {
+		var dayIndex = i + 1;
+		var date = new Date(year, month - 1, dayIndex);
+		
+		var dayOfWeek = dayIndex + " - " + daysOfWeek[date.getDay()];
+		
+		document.entryform.FWDay.options[i] = new Option(dayOfWeek, dayIndex);
+		
+		if ( dayIndex == today ) {
+			document.entryform.FWDay.options[i].selected = true;
+		}
+	}
+	
+}
+
+function clearDays ()
+{
+	while ( document.entryform.FWDay.options.length > 0 ) {
+		document.entryform.FWDay.options.length--;
+	}
+}
+
+function refresh ()
+{
+	if ( isN4 ) {
+		history.go(0);
+	}
+}
+
+			
+
+function checkIsFriday(obj){
+	
+	var d=new Date(obj.value);
+	if (d.getDay() != 6)
+	{
+
+		alert("Lock Date should be a Friday");
+		return false;		
+	}
+	return true;
+}
+
+Date.prototype.getWeek = function() 
+{
+	var onejan = new Date(this.getFullYear(),0,1);
+	return Math.ceil((((this - onejan) / 86400000) + onejan.getDay())/7);
+}
+
+function checkIsPreWeekEndDate(obj){
+	
+	var d=new Date(obj.value);
+	var tempDate=d.getDate();
+	var tempMonth=d.getMonth()+1;
+	var tempYear = '20'+d.getYear();
+	d = new Date(tempMonth+"/"+tempDate+"/"+tempYear);
+	
+	var todayDate = new Date();
+	todayDate.setHours(0,0,0,0)
+
+	if(d > todayDate)
+	{
+		alert('Do enter previous weekend dates');
+		return false;
+	}
+	return true;
+	
+}
+
+function checkIsEmpty(obj){
+	if(obj.value=='')
+	{
+		alert('Date is Mandatory');
+		return false;
+	}
+	return true;
+}
+
+function checkIsLessThanSysDate(){
+	
+	var date = new Date(); 
+	var curr_day = date.getDate();
+	var curr_month = date.getMonth();
+	curr_month = curr_month + 1;
+	var curr_year = date.getYear();
+	var hours = date.getHours();
+	var minutes = date.getMinutes();
+	var curr_Time = (hours * 60)+minutes;
+	
+	curr_month = (curr_month.toString().length < 2) ? "0" + curr_month : curr_month;
+	curr_year = new String(curr_year).substr(1,2);
+	curr_day = (curr_day.toString().length < 2) ? "0" + curr_day : curr_day;
+	
+	date = curr_year + "/" + curr_month + "/" + curr_day;
+	
+	var newCutOffDate = document.getElementById('FWTLCutOffDate').value;
+	var newCutOffTime = document.getElementById('FWCutOffTime').value;
+	
+	newCutOffTime = newCutOffTime * 60;
+
+	new_cutOff_month = newCutOffDate.substr(0,2);
+	new_cutOff_day = newCutOffDate.substr(3,2);
+	new_cutOff_year = newCutOffDate.substr(6,2);
+	
+	newCutOffDate = new_cutOff_year + "/" + new_cutOff_month + "/" + new_cutOff_day;
+	
+	if(date == newCutOffDate && curr_Time > newCutOffTime){
+		alert("cut off Time should not be less than current Time if you are selecting todays date as Lock date. Please try again");
+		return false;
+	}
+	
+	if(date > newCutOffDate){
+		alert("cut off date should not be less than current date. Please try again");
+		return false;
+	}
+		return true;	
+}
+
+function Submit_TM(obj){
+	if(!checkIsEmpty(obj))
+		return false;
+	if(!checkIsFriday(obj))
+		return false;
+	if(!checkIsPreWeekEndDate(obj))
+		return false;
+	
+	document.entryform.submit();
+}
+
+function Submit_FB(obj){
+	if(!checkIsEmpty(obj))
+		return false;
+	
+	document.FBE_Form.submit();
+}
+
+function Submit_FB_Pro(obj){
+	if(!checkIsEmpty(obj))
+		return false;
+	
+	document.PLE_Form.submit();
+}
+	
+function Submit_timlogger_cutoff_time(obj1,obj2){
+
+	if((!checkIsEmpty(obj1)))
+		return false;
+	if(!checkIsLessThanSysDate())
+		return false;
+	var prevCutOffDate = '<FIELD="FWPrevCutOffDate">';
+	var newCutOffDate  = document.getElementById('FWTLCutOffDate').value;	
+	var prevCutOffTime = '<FIELD="FWPrevCutOffTime">';
+	var newCutOffTime  = document.getElementById('FWCutOffTime').value;	
+	if(prevCutOffDate == newCutOffDate && prevCutOffTime == newCutOffTime){
+		alert("previously selected cut off Date and Time are same. Please change the CutOff Date/Time and then submit");
+	}else{
+	document.LockDateTime_Form.submit();
+	}
+}
+
+function loadPreFBProjectLockDate(projectId){
+	var lDate = 'Previously not Locked';
+	createAjaxHttpRequest(); // from AjaxUtils.js
+	xmlHttp.open("post","/servlets/ProcessServlet?FWProcess=HardLock&FWProcessOption=FixedBidProject&FWProcessPage=GetFixedBidProjectLockDate&FWProjectId="+projectId,false);					
+	xmlHttp.onreadystatechange = handleStateChange;
+	xmlHttp.send(null);
+	var index = output.indexOf('TRUE');
+	if(index!=-1)
+		lDate = output.substring(0,index);
+
+	document.getElementById('FWFBProjectPrevLockDateSpanId').innerHTML = lDate;
+	
+}
+
+</script>
+	<style>
+		.solid {
+			border: 2px solid black !important;
+		}
+	</style>
+</head>
+<body >
+<div class="container-md mt-4 w-50">
+	<form name="entryform" action="/servlets/ProxyServlet">
+		<input type="hidden" name="FWModule" value="tl_HardLock">
+		<input type="hidden" name="FWCurrentPage" value="0">
+		<input type="hidden" name="FWSubmit" value="true">
+		<input type="hidden" name="FWProContractType" value="1">
+
+		<fieldset class="border solid p-3">
+			<legend class="w-auto px-2">Time / Material Entries</legend>
+			<div class="form-group">
+				<span>Previous Lock date :</span>
+				<p class="text-sm-left"><FIELD="FWPrevLockDate"></p>
+				<!-- <input type="text" class="form-control" id="previousLockdate" value='<FIELD="FWPrevLockDate">'> -->
+			</div>
+			<div class="form-group form-inline">
+				<label for="FWLocktDateId" class="mr-2">Select Lock Date: </label>
+				<input type="text" name="FWLockDate" id="FWLocktDateId" datepicker="true" size="10" maxlength="8" value="" class="form-control">
+			</div>
+			<div class="form-group container mb-3 d-flex align-items-center justify-content-center">
+				<input type="button" name ="FWSubmit" value="Submit" onclick = "Submit_TM(document.entryform.FWLockDate);" class="btn btn-primary p-2 m-2" />
+				<input type="reset" value="Reset" onClick = "document.location.reload()" class="btn btn-secondary p-2 m-2" />
+			</div>
+		</fieldset>
+	</form>
+
+	<form name="LockDateTime_Form" action="/servlets/ProxyServlet">
+		<input type="hidden" name="FWModule" value="tl_HardLock">
+		<input type="hidden" name="FWCurrentPage" value="0">
+		<input type="hidden" name="FWSubmit" value="true">
+		<input type="hidden" name="FWProContractType" value="4">
+		<fieldset class="border solid p-3 mt-4">
+			<legend class="w-auto px-2">Weekly timelogger cutoff Date / Time</legend>
+			<div class="form-group">
+				<span>Previous Cut Off Date :</span>
+				<p class="text-sm-left"><FIELD="FWPrevCutOffDate"></p>
+				<!-- <input type="text" class="form-control" id="previousLockdate" value='<FIELD="FWPrevLockDate">'> -->
+			</div>
+			<div class="form-group">
+				<span>Previous Cut Off Time :</span>
+				<p class="text-sm-left"><FIELD="FWPrevCutOffTime"></p>
+				<!-- <input type="text" class="form-control" id="previousLockdate" value='<FIELD="FWPrevLockDate">'> -->
+			</div>
+			<div class="form-group form-inline">
+				<label for="FWTLCutOffDate" class="mr-2">Cut Off Date :</label>
+				<input type="text" name="FWTLCutOffDate" id="FWTLCutOffDate" datepicker="true" size="10" maxlength="8" value="" class="form-control">
+			</div>
+			<div class="form-group form-inline">
+				<label for="FWCutOffTime" class="mr-2">Cut Off Time :</label>
+				<select Name="FWCutOffTime" id="FWCutOffTime" class="form-control d-inline-block col-sm-3">
+					<option value = "00.00">12.00 AM</option>
+					<option value = "00.30">12.30 AM</option>
+					<option value = "01.00">01.00 AM</option>
+					<option value = "01.30">01.30 AM</option>
+					<option value = "02.00">02.00 AM</option>
+					<option value = "02.30">02.30 AM</option>
+					<option value = "03.00">03.00 AM</option>
+					<option value = "03.30">03.30 AM</option>
+					<option value = "04.00">04.00 AM</option>
+					<option value = "04.30">04.30 AM</option>
+					<option value = "05.00">05.00 AM</option>
+					<option value = "05.30">05.30 AM</option>
+					<option value = "06.00">06.00 AM</option>
+					<option value = "06.30">06.30 AM</option>
+					<option value = "07.00">07.00 AM</option>
+					<option value = "07.30">07.30 AM</option>
+					<option value = "08.00">08.00 AM</option>
+					<option value = "08.30">08.30 AM</option>
+					<option value = "09.00">09.00 AM</option>
+					<option value = "09.30">09.30 AM</option>
+					<option value = "10.00">10.00 AM</option>
+					<option value = "10.30">10.30 AM</option>
+					<option value = "11.00">11.00 AM</option>
+					<option value = "11.30">11.30 AM</option>
+					<option value = "12.00">12.00 PM</option>
+					<option value = "12.30">12.30 PM</option>
+					<option value = "13.00">01.00 PM</option>
+					<option value = "13.30">01.30 PM</option>
+					<option value = "14.00">02.00 PM</option>
+					<option value = "14.30">02.30 PM</option>
+					<option value = "15.00">03.00 PM</option>
+					<option value = "15.30">03.30 PM</option>
+					<option value = "16.00">04.00 PM</option>
+					<option value = "16.30">04.30 PM</option>
+					<option value = "17.00">05.00 PM</option>
+					<option value = "17.30">05.30 PM</option>
+					<option value = "18.00">06.00 PM</option>
+					<option value = "18.30">06.30 PM</option>
+					<option value = "19.00">07.00 PM</option>
+					<option value = "19.30">07.30 PM</option>
+					<option value = "20.00">08.00 PM</option>
+					<option value = "20.30">08.30 PM</option>
+					<option value = "21.00">09.00 PM</option>
+					<option value = "21.30">09.30 PM</option>
+					<option value = "22.00">10.00 PM</option>
+					<option value = "22.30">10.30 PM</option>
+					<option value = "23.00">11.00 PM</option>
+					<option value = "23.30">11.30 PM</option>
+				</select>
+			</div>
+
+			<div class="form-group container mb-3 d-flex align-items-center justify-content-center">
+				<input type="button" id="sub2" name ="FWSubmit"  onClick="Submit_timlogger_cutoff_time(document.LockDateTime_Form.FWTLCutOffDate,document.LockDateTime_Form.FWCutOffTime);" value="Submit" class="btn btn-primary p-2 m-2" />
+				<input type="reset" type="Reset" value="Reset" class="btn btn-secondary p-2 m-2" />
+			</div>
+		</fieldset>
+	</form>
+</div>
+</body>
+</html>

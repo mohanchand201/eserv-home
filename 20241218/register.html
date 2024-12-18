@@ -1,0 +1,135 @@
+<html>
+	<head>
+		<title>eServ, LLC - Registration</title>
+
+		<link type="text/css" rel="stylesheet" href="/assets/css/styles.css">
+		<link type="text/css" rel="stylesheet" href="/assets/css/bootstrap.min.css">
+	<script type="text/javascript" src="/js/SessionTimeOut.js"></script>
+		<!-- Time Out Continue feature Start -->	
+	<script>	
+	var alerttimelimit = timeoutAlertDuration();	
+		setTimeout('sessionWarning()',alerttimelimit);
+		function sessionWarning() {
+		    var sFeatures="dialogHeight: " + 150 + "px; scroll=No";
+	   		var myObject = new Object();	
+	   		myObject.CurrentsessionID = '<FIELD="FWSession">';	   			   	
+	        var retValue = window.showModalDialog("/jsp/RestoreSession.jsp",myObject,sFeatures);
+	        if(retValue == 'tmedout'){
+	        	document.registerform.action = "/servlets/ProxyServlet";
+	        	document.registerform.submit();
+		     } 
+	        setTimeout('sessionWarning()', alerttimelimit);  
+		}	
+	</script>
+	<!-- Time Out Continue feature End -->
+	
+
+	<script>            
+             
+		function dosubmit()
+	{
+		//validateContractAmount(document.registerform.FWFirst_Name)
+		//validateContractAmount(document.registerform.FWLast_Name)
+		
+		if(document.registerform.FWFirst_Name.value == '')
+		{
+			alert('Please enter the first name');
+			return false;
+		}
+
+		if(document.registerform.FWLast_Name.value == '')
+		{
+			alert('Please enter the last name');
+			return false;
+		}
+		if(document.registerform.FWEmail.value != '')
+		{
+			if(!checkemail())
+			{
+				return false;
+			}
+		}
+		else
+		{
+			alert('please enter email address');
+			return false;
+
+		}
+                 
+	}
+	
+	function validateContractAmount(field)
+	{
+			var valid = "0123456789."
+			var ok = "yes";
+			var temp;
+			for (var i=0; i<field.value.length; i++) {
+			temp = "" + field.value.substring(i, i+1);
+			if (valid.indexOf(temp) == "-1") ok = "no";
+			}
+			if (ok == "no") {
+			alert("Invalid entry!  Only numbers are accepted!");
+			field.focus();
+			field.select();
+			return(false);
+			   }
+			   return(true);
+	}
+         
+		function checkemail(){
+		var str=document.registerform.FWEmail.value;
+		var filter=/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
+		if (filter.test(str))
+		testresults=true;
+		else{
+		alert("Please input a valid email address!");
+		document.registerform.FWEmail.select();
+		document.registerform.FWEmail.focus();
+		testresults=false;
+		}
+		return (testresults);
+		}
+	</script>
+         
+         
+	</head>
+
+	<body  >
+	<div class="col-md-6 offset-md-3">
+		<span class="anchor" id="formRegister"></span>
+		<hr class="mb-5">
+
+		<!-- form card register -->
+		<div class="card card-outline-secondary">
+			<div class="card-header">
+				<h3 class="mb-0">Register</h3>
+			</div>
+			<div class="card-body">
+				<form class="form" role="form" autocomplete="off" name="registerform" action="/servlets/ProxyServlet" onsubmit = "return dosubmit()">
+					<input type="hidden" name="FWModule" value="register">
+					<input type="hidden" name="FWCurrentPage" value="0">
+					<div class="form-group">
+						<label for="inputFirstName">*First Name</label>
+						<input type="text" class="form-control" id="inputFirstName" placeholder="Full name" name="FWFirst_Name" size="20" maxlength="50" value="" required>
+					</div>
+					<div class="form-group">
+						<label for="inputName">*Last Name</label>
+						<input type="text" class="form-control" id="inputName" placeholder="Full name" name="FWLast_Name" size="20" maxlength="50" value="" required>
+					</div>
+					<div class="form-group">
+						<label for="inputEmail3">*Email</label>
+						<input type="email" class="form-control" id="inputEmail3" placeholder="Email" required="" name="FWEmail" size="20" maxlength="50" value="" required>
+					</div>
+					<div class="form-group container mb-3 d-flex align-items-center justify-content-center">
+						<input type="submit" id="sub" value="Register" class="btn btn-primary p-2 m-2" />
+						<input type="reset" id="rset" value="Reset" class="btn btn-secondary p-2 m-2" />
+					</div>
+				</form>
+				<p class="font-weight-bold">* Indicates required</p>
+			</div>
+		</div>
+		<!-- /form card register -->
+
+	</div>
+	</body>
+</html>

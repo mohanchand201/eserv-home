@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>eServ, LLC - Administer Projects</title>
+	<link type="text/css" rel="stylesheet" href="/assets/css/styles.css">
+	<link type="text/css" rel="stylesheet" href="/assets/css/bootstrap.min.css">
+	<script type="text/javascript" src="/js/SessionTimeOut.js"></script>
+
+	<!-- Session Timeout Script -->
+	<script>
+		var alerttimelimit = timeoutAlertDuration();
+        setTimeout('sessionWarning()', alerttimelimit);
+
+        function sessionWarning() {
+            var sFeatures = "dialogHeight: " + 150 + "px; scroll=No";
+            var myObject = new Object();
+            myObject.CurrentsessionID = '<FIELD="FWSession">';
+            var retValue = window.showModalDialog("/jsp/RestoreSession.jsp", myObject, sFeatures);
+            if (retValue == 'tmedout') {
+                document.activityCodeList.action = "/servlets/ProxyServlet";
+                document.activityCodeList.submit();
+            }
+            setTimeout('sessionWarning()', alerttimelimit);
+        }
+	</script>
+</head>
+<body class="bg-light p-4">
+<div class="container">
+	<form name="activityCodeList" action="/servlets/ProxyServlet" method="post" class="mb-4">
+		<input type="hidden" name="FWModule" value="admin_activitycodes">
+		<input type="hidden" name="FWCurrentPage" value="1">
+
+		<FIELD="FWNewActivityAccessStart">
+		<button type="submit" class="btn btn-primary">New Activity</button>
+		<FIELD="FWNewActivityAccessEnd">
+
+		<FIELD="FWActiveInActive">
+	</form>
+
+	<FIELD="FWStartComment">
+	<div class="alert alert-danger">
+		<strong>Sorry!</strong> You can't create a duplicate Activity code.
+	</div>
+	<FIELD="FWEndComment">
+
+	<table class="table table-bordered table-hover">
+		<thead class="table-primary">
+		<tr>
+			<th>Activity Code</th>
+			<th class="text-center">Billable</th>
+			<th class="text-center">Rate</th>
+			<th class="text-center">Contractor Approved</th>
+			<th>Status</th>
+			<th class="text-center">Effective Date</th>
+			<th class="text-center">End Date</th>
+		</tr>
+		</thead>
+		<tbody>
+		<FIELD="FWActivityCodeTable">
+		</tbody>
+	</table>
+</div>
+
+<FIELD="FWStartComment">
+<script>
+	alert("Sorry! You can't create a duplicate Activity code.");
+</script>
+<FIELD="FWEndComment">
+</body>
+</html>
