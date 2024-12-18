@@ -1,0 +1,168 @@
+<html>
+<head>
+
+	<link href="/assets/css/styles.css" rel="stylesheet" type="text/css" />
+	<link href="/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="/js/SessionTimeOut.js"></script>
+	<!-- Time Out Continue feature Start -->
+	<script>
+		var alerttimelimit = timeoutAlertDuration();
+		setTimeout('sessionWarning()',alerttimelimit);
+		function sessionWarning() {
+			var sFeatures="dialogHeight: " + 150 + "px; scroll=No";
+			var myObject = new Object();
+			myObject.CurrentsessionID = '<FIELD="FWSession">';
+			var retValue = window.showModalDialog("/jsp/RestoreSession.jsp",myObject,sFeatures);
+			if(retValue == 'tmedout'){
+				document.startform.action = "/servlets/ProxyServlet";
+				document.startform.submit();
+			}
+			setTimeout('sessionWarning()', alerttimelimit);
+		}
+	</script>
+	<!-- Time Out Continue feature End -->
+
+
+	</SCRIPT>
+
+
+	<Script language="javascript" >
+
+		function callPermissionpage(obj)
+		{
+
+			document.startform.action="/jsp/ReportAclPermission.jsp";
+			document.startform.submit();
+
+
+		}
+		function callScheduleoperations()
+		{
+
+			document.startform.action="/servlets/ReportSchedulerServlet";
+			document.startform.submit();
+
+
+		}
+		function ModifyScheduledReport(selrepName,sc_id)
+		{
+			document.startform.action="/servlets/ProxyServlet";
+			document.startform.FWSelectedReportName.value = selrepName;
+			document.startform.FWSelectedSCRepId.value = sc_id;
+			document.startform.submit();
+		}
+
+		function checkScheduler(){
+			var schedulerReportIndex = "<FIELD="FWReportWithScheduler">";
+			var Rlist = schedulerReportIndex.split('#');
+			for(var i=0;i<Rlist.length;i++){
+				if(document.startform.FWSelectedReport.value==Rlist[i])
+				{
+					document.getElementById('FWSelectButton_sc').style.visibility = "visible";
+					//document.getElementById('FWSelectButton_sc').disabled = false;
+					break;
+				}else{
+					document.getElementById('FWSelectButton_sc').style.visibility = "hidden";
+					//document.getElementById('FWSelectButton_sc').disabled = true;
+				}
+			}
+		}
+
+	</Script>
+	<script type="text/javascript" src="/assets/js/datepicker/datepickercontrol.js"></script>
+	<link type="text/css" rel="stylesheet" href="/assets/js/datepicker/datepickercontrol_lnx.css">
+
+</head>
+
+<body onload="checkScheduler();"  >
+<div id="reportselect" class="container mt-5">
+	<br>
+		<form name="startform" action="/servlets/ProxyServlet" method="post" class="form">
+			<input type="hidden" name="FWModule" value="reportviewer">
+			<input type="hidden" name="FWCurrentPage" value="0">
+			<input type="hidden" name="FWSubmit" value="true">
+			<input type="hidden" name="FWCurrSession" value="<FIELD="FWCurrSession">">
+			<input type="hidden" name="SessionID" value="<FIELD="FWCurrSession">">
+			<input type="hidden" name="scheduleTask" value="ScheduleList">
+			<input type="hidden" name="FWSelectedReportName" value="">
+			<input type="hidden" name="FWSelectedSCRepId" value="">
+			<table class="border_space_0 padding_4">
+
+
+
+				<tr>
+					<td class="align_right font-weight-bold ">Report: &nbsp;</td>
+					<td class="align_left">
+						<select name="FWSelectedReport" onchange="checkScheduler();" class="form-control d-inline-block col-sm-6 mb-3">
+							<FIELD="FWAvailableReportList">
+						</select>
+
+						<input type="submit" name="FWSelectButton" value="Run Report" class="btn btn-primary p-2 m-2">
+					</td>
+					<td>
+						<div id="FWSelectButton_sc" class="visibility_hide">
+							<input type="submit" name="FWSelectButton" value="Schedule Report">
+							<div>
+					</td>
+
+
+				</tr>
+			</table>
+			<br>
+			<br>
+
+
+
+			<FIELD="FWPermsStart">
+			<p>
+			<table class="table_width100">
+				<tr>
+					<td >&nbsp;</td>
+					<td class="align_left">
+						<a href=" javascript:callPermissionpage('0');">Click here to view Report permissions</a></td>
+					<td>&nbsp;</td>
+				</tr>
+			</table>
+			</p>
+
+			<FIELD="FWPermsEnd">
+
+
+			<FIELD="FWScheduledRepStart">
+			<br>
+			<div class="align_left"> You have Scheduled below Reports : </div>
+			<br>
+			<table class="table_all_border">
+				<table class="table_width100 align_center border_space_0">
+					<thead>
+					<tr class="table_header_color">
+						<th class="th_center_mid_wid20">Scheduled Report Name</th>
+						<th class="th_center_mid_wid20">Report Name</th>
+						<th class="th_center_mid_wid20">Last Ran at</th>
+						<th class="th_center_mid_wid20">Next Run</th>
+						<th class="th_center_mid_wid20">IsEnable</th>
+						<th class="th_center_mid_wid20">Remove</th>
+					</tr>
+					</thead>
+					<tbody>
+					<FIELD="FWScheduledreports">
+					</tbody>
+				</table>
+			</table>
+			<input class="align_center" type="button" Name="FWSubmit" value="Submit" onclick="callScheduleoperations()">
+			<FIELD="FWScheduledRepEnd">
+
+		</form>
+</div>
+
+<FIELD="FWCommentStart">
+<div id="reportparameters" class="container">
+	<center>
+		<FIELD="FWReportParameters">
+	</center>
+</div>
+<FIELD="FWCommentEnd">
+
+<br>
+</body>
+</html>
