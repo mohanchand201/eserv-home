@@ -1,0 +1,405 @@
+<html>
+	<head>
+		<title>eServ, LLC - Time Logging</title>
+		  <script>history.forward()</Script>
+		  
+			<link href="/assets/css/styles.css" rel="stylesheet" type="text/css" />
+			<link href="/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="/assets/js/SessionTimeOut.js"></script>
+		<!-- Time Out Continue feature Start -->	
+	<script>	
+	var alerttimelimit = timeoutAlertDuration();	   
+		setTimeout('sessionWarning()',alerttimelimit);
+		function sessionWarning() {
+		    var sFeatures="dialogHeight: " + 150 + "px; scroll=No";
+	   		var myObject = new Object();
+	   		myObject.CurrentsessionID = '<FIELD="FWSession">';	   			   	
+	        var retValue = window.showModalDialog("/jsp/RestoreSession.jsp",myObject,sFeatures);
+	        if(retValue == 'tmedout'){
+	        	document.editForm.action = "/servlets/ProxyServlet";
+	        	document.editForm.submit();
+		     } 
+	        setTimeout('sessionWarning()', alerttimelimit);  
+		}	
+	</script>
+	<!-- Time Out Continue feature End -->
+	
+	
+<script>
+var isN4, isIE;
+var IVPCheck = false;
+var FWunRegisteredUsers = '<FIELD="FWunRegisteredUsers">';
+var fixedbidaccessUsers =  <FIELD="FWFixedbidProjAccess">;
+if ( parseInt(navigator.appVersion.charAt(0)) >= 4) {
+	isN4 = (navigator.appName == "Netscape") ? true : false;
+	isIE = (navigator.appName.indexOf("Microsoft") != -1) ? true : false;
+}
+<!-- Here cutoff date need to specify to restrict the employees from entering into time log, if they didn't filled the 	industry experience in employee hrm section-->
+	
+<!--plz enter the date in yyyy/mm/dd format-->
+
+var date = "2007/06/20";
+
+var empHireDate = "<FIELD="FWEmpHireDateSelected">";
+var empid_current = "<FIELD="FWPresentUser">";
+var industry_exp_entered = <FIELD="FWIndustryExpFilled">;
+
+var isEmployee = '<FIELD="FWisEmployee">';
+
+function setControl (monthIndex, yearIndex)
+{
+	clearDays();
+	
+	var daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+	var daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+	
+	var month = document.editForm.FWMonth.options[monthIndex].value;
+	var year = document.editForm.FWYear.options[document.editForm.FWYear.selectedIndex].value;
+	if ( year > "89" ) {
+		year = "19" + year;
+	} else {
+		year = "20" + year;
+	}
+
+	var maxDays = daysInMonth[monthIndex];
+	if ( (month == '02') && (year % 4 == 0) ) {
+		maxDays = maxDays + 1;
+	}
+	
+	var today = new Date().getDate();
+	for ( i = 0; i <= maxDays - 1; i++ ) {
+		var dayIndex = i + 1;
+		var date = new Date(year, month - 1, dayIndex);
+		
+		var dayOfWeek = dayIndex + " - " + daysOfWeek[date.getDay()];
+		
+		document.editForm.FWDay.options[i] = new Option(dayOfWeek, dayIndex);
+		
+		if ( dayIndex == today ) {
+			document.editForm.FWDay.options[i].selected = true;
+		}
+	}
+	
+}
+
+function clearDays ()
+{
+	while ( document.editForm.FWDay.options.length > 0 ) {
+		document.editForm.FWDay.options.length--;
+	}
+}
+
+function refresh ()
+{
+	if ( isN4 ) {
+		history.go(1);
+	}
+}
+function doSubmit()
+{
+	if(FWunRegisteredUsers.indexOf(document.editForm.FWEmployeeID.value)!=-1){
+		alert('User - '+document.editForm.FWEmployeeID.options[document.editForm.FWEmployeeID.selectedIndex].text+' is not yet registered.');
+		return false;
+	}
+
+							var month = document.editForm.FWMonth.value;
+							var day = document.editForm.FWDay.value;
+							var year = document.editForm.FWYear.value;
+							
+							var yr = parseFloat(year)+parseInt(2000);
+		
+						
+						
+							//var lockDate = new Date(document.editForm.FWLockDate.value);
+							var datestr = document.editForm.FWLockDate.value;
+							
+							//console.log('datestr value in start_page.html ',datestr);
+							var lockyear = "2019"; // datestr.substring(0,4);
+							// var lockyear = datestr.substring(0,4);
+							var lockmonth = datestr.substring(5,7);
+							var lockdate = datestr.substring(8,10);
+							
+						
+						var lockDate = new Date(parseFloat(lockyear),parseFloat(lockmonth)-1,parseFloat(lockdate));
+						
+							var entrDate = new Date(parseFloat(yr),parseFloat(month)-1,parseFloat(day));
+							
+		
+	
+	
+	if(lockDate < entrDate)
+	{
+		document.editForm.action = "/servlets/ProxyServlet";
+		document.editForm.submit();
+		
+
+	}else if(checkfixedbidProjectAccess()){
+			
+		document.editForm.action = "/servlets/ProxyServlet";
+		document.editForm.submit();
+	}
+	else
+	{
+
+		if(document.editForm.FWIsMemberFlag.value!="false")
+		{
+			if(lockDate >= entrDate && document.editForm.FWIsMemberFlag.value == "1" )
+				{
+						if(parseFloat(document.editForm.FWUserID.value) == parseFloat(document.editForm.FWEmployeeID.value.substring(1)))
+						{
+							document.editForm.action = "/servlets/ProxyServlet";
+							document.editForm.submit();
+							
+				
+						}
+						else
+						{
+					
+							alert('The time entries for the date(s) chosen are already locked by administrator.');
+						}
+	
+	
+				}
+				else if(document.editForm.FWIsMemberFlag.value == "2" && lockDate>=entrDate)
+				{
+								document.editForm.action = "/servlets/ProxyServlet";
+								document.editForm.submit();
+	
+				}
+					else
+				{
+			
+				document.editForm.action = "/servlets/ProxyServlet";
+				document.editForm.submit();
+				}
+				
+		}
+		else if(parseFloat(document.editForm.FWUserID.value) == parseFloat(document.editForm.FWEmployeeID.value.substring(1)))
+		{
+			document.editForm.action = "/servlets/ProxyServlet";
+			document.editForm.submit();
+			
+
+		}
+		else
+		{
+			alert('The time entries for the date(s) chosen are already locked by administrator.');
+		}
+	}
+}
+function checkfixedbidProjectAccess(){
+	//alert(fixedbidaccessUsers);
+	var selectedEmp = document.editForm.FWEmployeeID.value;
+	//alert(selectedEmp);
+for(var f =0 ;f<fixedbidaccessUsers.length;f++){	
+	//alert(fixedbidaccessUsers[f]);
+	if(fixedbidaccessUsers[f] == selectedEmp){		
+		return true;
+	}	
+}
+	return false;
+}	
+
+
+
+function checkEmployee(e)
+{
+	if(IVPCheck == false)
+		return true;
+
+	var emp_hiredate = new Date(empHireDate.substr(0,4),empHireDate.substr(5,2)-1,empHireDate.substr(8,2));
+	
+	//emp_hiredate.setTime( emp_hiredate.getTime() + 7 * 24 * 60 * 60 * 1000); 
+	
+	var flag = 0;
+	
+	var cutOffDate = new Date(date.substr(0,4),date.substr(5,2)-1,date.substr(8,2));
+	
+	var currentDate = new Date();
+	
+	//alert(abs(emp_hiredate.getTime()-currentDate.getTime())/(24 * 60 * 60 * 1000));
+	
+	var empid = e.value;
+	if(cutOffDate < currentDate )
+	{
+					
+		if(emp_hiredate < cutOffDate)
+		{
+			emp_hiredate.setTime( emp_hiredate.getTime() + 7 * 24 * 60 * 60 * 1000);
+			
+			if(emp_hiredate < currentDate)
+			{
+				flag = 1;
+			}
+			else
+			{
+				flag = 0;
+			}
+		}
+		else 
+		{
+			emp_hiredate.setTime( emp_hiredate.getTime() + 7 * 24 * 60 * 60 * 1000);
+			
+			if(emp_hiredate < currentDate)
+			{
+				flag = 1;
+			}
+			else
+			{
+				flag = 0;
+			}
+			
+		}
+		if(empid == empid_current && isEmployee == 'e' && industry_exp_entered == 0 && empid != 'eServOnlineAdmin-TS.DOC@Ltts.com' && flag == 1)
+		{
+			
+			alert('You didn\'t entered the Industry experience after cutoff date and you will be navigated to Hrm section to fill Industry experience ');
+			document.editForm.FWCurrentPage.value = "5";
+		  //document.editForm.FWEmployeeID.value = empid ;
+			document.editForm.FWRetain.value = "yes";
+			document.editForm.FWFromTimelogger.value = "true";
+			document.editForm.FWSubmit.value = "true";
+			document.editForm.FWModule.value = "admin_employee";
+			document.editForm.action = "/servlets/ProxyServlet#a";
+			document.editForm.submit();
+			document.getElementById('sub').style.visibility= "hidden";
+			document.getElementById('rset').style.visibility= "hidden";
+		
+		}		
+		else if(industry_exp_entered == 0 && empid_current != 'admin')
+		{
+			mon = emp_hiredate.getMonth()+1;
+			alert('Please enter the Industry Experience in Hrm Section , Your cutoff date is '+mon+'/'+emp_hiredate.getDate()+'/'+emp_hiredate.getFullYear());
+		}
+			
+	}
+	else
+	{
+		//alert('cutoff date greater than current');
+				
+		if(industry_exp_entered == 0 && empid_current != 'admin' )
+		{
+		
+			alert('Please enter the Industry Experience in Hrm Section , Your cutoff date is '+date);
+		}
+			
+	}
+
+}
+
+
+
+
+
+
+
+</script>
+	</head>
+
+	<body style="padding-left:50px" >
+		<br>
+		<div class="mb-3">
+			<div class="container mb-3">
+				<b class="mb-3 mx-4 text-center">Time Entry</b>
+			</div>
+			<form name="editForm" action="/servlets/ProxyServlet" method="post">
+				<input type="hidden" name="FWModule" value="timelogger">
+				<input type="hidden" name="FWCurrentPage" value="0">
+				<input type="hidden" name="FWSubmit" value="true">
+					<input type="hidden" name="FWEnteredDate" value="<FIELD="FWEnteredDate">">
+					<input type="hidden" name="FWLockDate" value="<FIELD="FWLockDate">">
+					<input type="hidden" name="FWIsMemberFlag" value="<FIELD="FWIsMemberFlag">">
+					<input type="hidden" name="FWUserID" value = "<FIELD="FWUserID">">
+					<input type="hidden" name="FWRetain" >
+					<input type="hidden" name="FWFromTimelogger" >
+
+				<div class="mb-3">
+					<span class="ml-4">Employee: &nbsp;</span>
+					<select class="form-control d-inline-block col-sm-6 mb-3" name="FWEmployeeID" onchange="checkEmployee(this);">
+						<FIELD="FWEmployeeList">
+					</select>
+				</div>
+				<div class="mb-3 ml-4">
+					<span>Week Ending:&nbsp;</span>
+					<select name="FWMonth" class="form-control d-inline-block col-sm-3 mr-1 mb-3"
+							onChange="setControl(this.selectedIndex, document.editForm.FWYear.selectedIndex); refresh(); return false;">
+						<option value="01" <FIELD="FWJanSelected"> >January</option>
+						<option value="02" <FIELD="FWFebSelected"> >February</option>
+						<option value="03" <FIELD="FWMarSelected"> >March</option>
+						<option value="04" <FIELD="FWAprSelected"> >April</option>
+						<option value="05" <FIELD="FWMaySelected"> >May</option>
+						<option value="06" <FIELD="FWJunSelected"> >June</option>
+						<option value="07" <FIELD="FWJulSelected"> >July</option>
+						<option value="08" <FIELD="FWAugSelected"> >August</option>
+						<option value="09" <FIELD="FWSepSelected"> >September</option>
+						<option value="10" <FIELD="FWOctSelected"> >October</option>
+						<option value="11" <FIELD="FWNovSelected"> >November</option>
+						<option value="12" <FIELD="FWDecSelected"> >December</option>
+					</select>
+					<select name="FWDay" class="form-control d-inline-block mb-3 mr-1 col-sm-2">
+						<FIELD="FWDayList">
+					</select>
+					<select name="FWYear" onChange="setControl(document.editForm.FWMonth.selectedIndex, this.selectedIndex); refresh(); return false;" class="form-control d-inline-block mb-3 col-sm-2 mr-1">
+						<option value="99" <FIELD="FW1999Selected"> >1999</option>
+						<option value="00" <FIELD="FW2000Selected"> >2000</option>
+						<option value="01" <FIELD="FW2001Selected"> >2001</option>
+						<option value="02" <FIELD="FW2002Selected"> >2002</option>
+						<option value="03" <FIELD="FW2003Selected"> >2003</option>
+						<option value="04" <FIELD="FW2004Selected"> >2004</option>
+						<option value="05" <FIELD="FW2005Selected"> >2005</option>
+						<option value="06" <FIELD="FW2006Selected"> >2006</option>
+						<option value="07" <FIELD="FW2007Selected"> >2007</option>
+						<option value="08" <FIELD="FW2008Selected"> >2008</option>
+						<option value="09" <FIELD="FW2009Selected"> >2009</option>
+						<option value="10" <FIELD="FW2010Selected"> >2010</option>
+						<option value="11" <FIELD="FW2011Selected"> >2011</option>
+						<option value="12" <FIELD="FW2012Selected"> >2012</option>
+						<option value="13" <FIELD="FW2013Selected"> >2013</option>
+						<option value="14" <FIELD="FW2014Selected"> >2014</option>
+						<option value="15" <FIELD="FW2015Selected"> >2015</option>
+						<option value="16" <FIELD="FW2016Selected"> >2016</option>
+						<option value="17" <FIELD="FW2017Selected"> >2017</option>
+						<option value="18" <FIELD="FW2018Selected"> >2018</option>
+						<option value="19" <FIELD="FW2019Selected"> >2019</option>
+						<option value="20"  <FIELD="FW2020Selected"> >2020</option>
+						<option value="21"  <FIELD="FW2021Selected"> >2021</option>
+						<option value="22"  <FIELD="FW2022Selected"> >2022</option>
+						<option value="23"  <FIELD="FW2023Selected"> >2023</option>
+						<option value="24" selected <FIELD="FW2024Selected"> >2024</option>
+
+
+					</select>
+					<div class="container mb-3">
+						<input type="button" id = "sub" value=" OK " onClick ="doSubmit();" class="btn btn-primary" />
+						<input type="reset" id = "rset" value="Reset" onClick = "document.location.reload(true)" class="btn btn-secondary" />
+					</div>
+				</div>
+			</form>
+			<br>
+			<!--
+			<table width="30%" cols="1" border>
+				<tr>
+					<td align="center" valign="middle">
+						<table>
+							<tr>
+								<td class="align_center_top">
+									<b>Profitability Info</b><br><br>
+									<a href="<FIELD="FWCurrentWeekURL">">Current Week</a><br>
+									<a href="<FIELD="FWCurrentMonthURL">">Current Month</a><br>
+									<a href="<FIELD="FWCurrentQuarterURL">">Current Quarter</a>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+			-->
+		</div>
+	</body>
+	<script>
+		checkEmployee(document.editForm.FWEmployeeID);
+	</script>
+</html>
+
+
+
