@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+
+		<link type="text/css" rel="stylesheet" href="/assets/css/styles.css">
+		<link type="text/css" rel="stylesheet" href="/assets/css/bootstrap.min.css">
+		<script src="/js/SingleDateValidation.js"></script>
+		<script type="text/javascript" src="/js/datepicker/datepickercontrol.js"></script>
+		<link type="text/css" rel="stylesheet" href="/js/datepicker/datepickercontrol_lnx.css">
+		
+
+	<script type="text/javascript" src="/assets/js/SessionTimeOut.js"></script>
+		<!-- Time Out Continue feature Start -->	
+	<script>	
+	var alerttimelimit = timeoutAlertDuration();	
+		setTimeout('sessionWarning()',alerttimelimit);
+		function sessionWarning() {
+		    var sFeatures="dialogHeight: " + 150 + "px; scroll=No";
+	   		var myObject = new Object();	
+	   		myObject.CurrentsessionID = '<FIELD="FWSession">';	   			   	
+	        var retValue = window.showModalDialog("/jsp/RestoreSession.jsp",myObject,sFeatures);
+	        if(retValue == 'tmedout'){
+	        	document.entryform.action = "/servlets/ProxyServlet";
+	        	document.entryform.submit();
+		     } 
+	        setTimeout('sessionWarning()', alerttimelimit);  
+		}	
+	</script>
+	<!-- Time Out Continue feature End -->
+	
+	
+<script>
+			
+			var isN4, isIE;
+if ( parseInt(navigator.appVersion.charAt(0)) >= 4) {
+	isN4 = (navigator.appName == "Netscape") ? true : false;
+	isIE = (navigator.appName.indexOf("Microsoft") != -1) ? true : false;
+}
+
+function setControl (monthIndex, yearIndex)
+{
+	clearDays();
+	
+	var daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+	var daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+	
+	var month = document.entryform.FWMonth.options[monthIndex].value;
+	var year = document.entryform.FWYear.options[document.entryform.FWYear.selectedIndex].value;
+	if ( year > "89" ) {
+		year = "19" + year;
+	} else {
+		year = "20" + year;
+	}
+
+	var maxDays = daysInMonth[monthIndex];
+	if ( (month == '02') && (year % 4 == 0) ) {
+		maxDays = maxDays + 1;
+	}
+	
+	var today = new Date().getDate();
+	
+	for ( i = 0; i <= maxDays - 1; i++ ) {
+		var dayIndex = i + 1;
+		var date = new Date(year, month - 1, dayIndex);
+		
+		var dayOfWeek = dayIndex + " - " + daysOfWeek[date.getDay()];
+		
+		document.entryform.FWDay.options[i] = new Option(dayOfWeek, dayIndex);
+		
+		if ( dayIndex == today ) {
+			document.entryform.FWDay.options[i].selected = true;
+		}
+	}
+	
+}
+
+function clearDays ()
+{
+	while ( document.entryform.FWDay.options.length > 0 ) {
+		document.entryform.FWDay.options.length--;
+	}
+}
+
+function refresh ()
+{
+	if ( isN4 ) {
+		history.go(0);
+	}
+}
+
+			
+
+
+	
+			function checkFields()
+			{
+			var allow = true;
+			var allow1 = true;
+			if(document.entryform.FWDescriptionOfHoliday.value=="")
+			{
+				allow = false;
+				alert('Please enter the holiday name');
+				return false;
+			}
+			if(document.entryform.FWEnteredDate.value==""){
+				allow1 = false;
+				alert('Please enter the Holiday Date');
+				return false;
+			}else{				
+				var value =  document.entryform.FWCuryear.value;
+				var value1 = document.entryform.FWEnteredDate.value;																	
+				if(value.substring(2) == value1.substring(6)){
+						if(value == "2011"){
+						if(!CheckDifference(document.entryform.FWTodayDate.value, document.entryform.FWEnteredDate.value)){
+						alert('Do enter holidays for future dates on current year');
+						allow1 = false;
+						}	
+						}								
+				}else{
+					allow1 = false;
+					alert('Do enter holidays for future dates on current year');
+					return false;
+				}
+										
+			}		
+			if(allow && allow1)
+			{
+				document.entryform.action = "/servlets/ProxyServlet";
+				document.entryform.submit();
+			}
+			}			
+			function CheckDifference(sdate, edate)
+			{	
+				var tempStr="";
+				tempStr = sdate;
+				var daysInMonth = DaysArray(12);
+				var pos1=tempStr.indexOf(dtCh);
+				var pos2=tempStr.indexOf(dtCh,pos1+1);
+				
+				var strDay=tempStr.substring(0,pos1);
+				var strMonth=tempStr.substring(pos1+1,pos2);
+				var strYear=tempStr.substring(pos2+1);
+				strYr=strYear;
+				
+				strYr = "20"+strYr;
+					
+				if (strMonth.charAt(0)=="0" && strMonth.length>1) 
+					strMonth=strMonth.substring(1);
+				if (strDay.charAt(0)=="0" && strDay.length>1)
+					strDay=strDay.substring(1);
+				for (var i = 1; i <= 3; i++) {
+					if (strYr.charAt(0)=="0" && strYr.length>1) strYr=strYr.substring(1);
+				}
+				
+				Sday=parseInt(strDay);
+				Smonth=parseInt(strMonth);	
+				Syear=parseInt(strYr);
+				
+				tempStr = edate;
+				var daysInMonth = DaysArray(12);
+				var pos1=tempStr.indexOf(dtCh);
+				var pos2=tempStr.indexOf(dtCh,pos1+1);
+				
+				var strMonth=tempStr.substring(0,pos1);
+				var strDay=tempStr.substring(pos1+1,pos2);
+				var strYear=tempStr.substring(pos2+1);
+				strYr=strYear;
+				
+				strYr = "20"+strYr;
+					
+				if (strMonth.charAt(0)=="0" && strMonth.length>1) 
+					strMonth=strMonth.substring(1);
+				if (strDay.charAt(0)=="0" && strDay.length>1) 
+					strDay=strDay.substring(1);
+				for (var i = 1; i <= 3; i++) {
+					if (strYr.charAt(0)=="0" && strYr.length>1) strYr=strYr.substring(1);
+				}
+				
+				Eday=parseInt(strDay);
+				Emonth=parseInt(strMonth);
+				Eyear=parseInt(strYr);
+				
+				
+			//Start Date and end date can be same for most cases in this appln.  
+			//For reports data for just one date may be required.
+			/*
+				if (sdate==edate)
+				{
+					alert("End date should not precede start date");
+					return false;
+				}	
+			*/
+				if (Date.parse(sdate) < Date.parse(edate)) 
+					return true;
+				else { 
+					return false; 
+					}
+					
+
+
+				
+
+			}
+
+
+			
+</script>
+</head>
+<body >
+<center><b>* Add Description and date for the holiday. 
+</b></center><br>
+<form name="entryform" action="/servlets/ProxyServlet" method="post" class="bg-light mx-3 w-50 text-center">
+		<input type="hidden" name="FWModule" value="List_of_Holidays">
+		<input type=  "hidden" name="FWCurrentPage" value="<FIELD="FWCurrentPage">">
+		<input type = "hidden" name = "FWCurrPage" value = "<FIELD="FWCurrPage">">
+		<input type = "hidden" name = "FWMode" value = "<FIELD="FWMode">">
+		<input type=  "hidden" name="FWSubmit" value="true">
+		<input type=  "hidden" name="FWTodayDate" value = "<FIELD="FWTDate">">
+		<input type=  "hidden" name="FWCuryear" value = "<FIELD="FWCurrentYear">">
+			
+<table class="align_center border_space_0" summary="">
+</table>
+<div class="form-group form-row">
+	<label for="FWDescriptionOfHoliday" class="col-sm-2 col-form-label">Holiday Name : </label>
+	<div class="col-sm-6">
+		<textarea id="FWDescriptionOfHoliday" cols="25" name="FWDescriptionOfHoliday" rows="3" wrap="vertical"  ><FIELD="FWDescriptionOfHoliday"></textarea>
+	</div>
+</div>
+	<div class="form-group form-row">
+		<label for="FWEnteredDateid" class="col-sm-2 col-form-label">Holiday Date : </label>
+		<div class="col-sm-6">
+			<input type="text" size="8" Name="FWEnteredDate" id="FWEnteredDateid"  value="<FIELD="FWHolidayDate">" datepicker ="true">
+		</div>
+	</div>
+	<div class="form-group row">
+		<div class="col-sm-6 text-center">
+			<input class="btn btn-sm btn-primary" type="button" value="Go Back" onClick="document.location.replace('ProxyServlet?FWModule=List_of_Holidays&amp;FWRetry=false&amp;FWCurrentPage=<FIELD="FWCurrPage">');">
+			<input class="btn btn-sm btn-primary" type="Reset" value="Reset" onClick = "document.location.reload()">
+			<input class="btn btn-sm btn-primary" type="button" name ="FWSubmit" value="Submit" onclick = "checkFields();">
+		</div>
+	</div>
+</form>
+
+
+
+
+</body>
+</html>
