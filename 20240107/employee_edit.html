@@ -1,0 +1,2318 @@
+<html>    
+	<head>
+		<link type="text/css" rel="stylesheet" href="/assets/css/styles.css">
+	
+		<title>eServ, LLC - Administer Employees</title>
+		
+
+	<script type="text/javascript" src="/assets/js/SessionTimeOut.js"></script>
+		<!-- Time Out Continue feature Start -->	
+	<script type="text/javascript">
+	var alerttimelimit = timeoutAlertDuration();	
+		setTimeout('sessionWarning()',alerttimelimit);
+		function sessionWarning() {
+		    var sFeatures="dialogHeight: " + 150 + "px; scroll=No";
+	   		var myObject = new Object();	
+	   		myObject.CurrentsessionID = '<FIELD="FWSession">';	   			   	
+	        var retValue = window.showModalDialog("/jsp/RestoreSession.jsp",myObject,sFeatures);
+	        if(retValue == 'tmedout'){
+	        	document.employeeform.action = "/servlets/ProxyServlet";
+	        	document.employeeform.submit();
+		     } 
+	        setTimeout('sessionWarning()', alerttimelimit);  
+		}	
+	</script>
+	<!-- Time Out Continue feature End -->
+	
+
+		<script type="text/javascript" src="/js/datepicker/datepickercontrol.js"></script>
+		<link type="text/css" rel="stylesheet" href="/js/datepicker/datepickercontrol_lnx.css">
+		<script src = "/assets/js/individualDateValidation.js"></script>
+<script>
+
+// Begin
+var FWSubCompArray = <FIELD="FWSubCompArray">;
+var FWCompIdArray = <FIELD="FWCompIdArray">;
+var FWSubCompCenterId = <FIELD="FWSubCompCenterId">;
+var curSubCompArray = null;
+
+var FWDepartmentArray = <FIELD="FWDepartmentArray">;
+var FWAvailBillHrsArray = <FIELD="FWAvailBillHrsArray">;
+var curAvailHrs;
+var curEffectiveFrom;
+var curHireDate;
+
+function loadSubCompList(){
+	curSubCompArray = new Array();
+	for(i=0;i<FWSubCompArray.length;i++){
+		var curCompId = document.employeeform.FWCompetencyCenterId.value;
+		var subTemp = FWSubCompArray[i];
+		var tempCompId = subTemp.split('#')[2];	
+		if(tempCompId == curCompId){
+			curSubCompArray.push(FWSubCompArray[i]);
+		}
+	}
+	var subComp_forSort = new Array();
+	var noneArray = new Array();
+	
+	for(var a=0;a<curSubCompArray.length;a++){
+		var keyValue = curSubCompArray[a].split('#');
+		if(keyValue[1].toString()!= 'None' && keyValue[1].toString()!= 'Operations'){
+			subComp_forSort.push(keyValue[1]+'#'+keyValue[0]);
+		}else{
+			noneArray.push(keyValue[1]+'#'+keyValue[0]);
+		}		
+	}
+	curSubCompArray = new Array();
+	curSubCompArray = noneArray.concat(subComp_forSort.sort());
+	createList(curSubCompArray,document.employeeform.FWSubCompetencyCenterId);
+}
+
+function createList(listKeyValueArray,f1)
+{				
+	f1.options.length = 0;
+	//f1.options[0] = new Option('None',0);
+	for(var a=0;a<listKeyValueArray.length;a++)   
+	{
+		var keyValue = listKeyValueArray[a].split('#');
+	    f1.options[a] = new Option(keyValue[0],keyValue[1]);	    
+	    if(keyValue[1]==FWSubCompCenterId)
+	    	f1.options[a].selected = true;					         
+	}	       
+}
+
+function loadCurrVal(){
+	try{
+		if(document.employeeform.FWEffectiveFrom!=null){
+			curAvailHrs = document.employeeform.FWAvailBillHours.value;
+			curEffectiveFrom = document.employeeform.FWEffectiveFrom.value;
+			curHireDate = document.employeeform.FWHireDate.value;
+		}
+	}catch(err){}
+}
+
+function loadAvailBillHrs(change)
+{
+	try{
+	if( (document.employeeform.FWAvailBillHours.value==''&& change==0) || (change==1 && !document.employeeform.FWisSpecialEmployee.checked) )
+	{
+		for(i=0;i<FWDepartmentArray.length;i++){
+			if(FWDepartmentArray[i]==document.employeeform.FWDepartmentID.value){
+				document.employeeform.FWAvailBillHours.value = FWAvailBillHrsArray[i];
+					curAvailHrs = document.employeeform.FWAvailBillHours.value;
+			}
+		}		
+	}
+	else if(change==2){
+		if(!document.employeeform.FWisSpecialEmployee.checked){
+			for(i=0;i<FWDepartmentArray.length;i++){
+				if(FWDepartmentArray[i]==document.employeeform.FWDepartmentID.value)
+					document.employeeform.FWAvailBillHours.value = FWAvailBillHrsArray[i];
+			}
+		}			
+	}
+		
+		
+	}catch(err){}
+
+	if(document.employeeform.FWisSpecialEmployee.checked == false){
+		document.employeeform.FWAvailBillHours.readOnly = true;
+	}else{
+		document.employeeform.FWisSpecialEmployee.checked = true;
+	}
+	
+}
+ 
+function enableDisableAvailBillHrs()
+{
+	if(document.employeeform.FWisSpecialEmployee.checked == false){
+		if(confirm("Unselection will change Avail Billable Hrs by Location's default avail billable Hours")){
+			loadAvailBillHrs(1);
+			document.employeeform.FWAvailBillHours.readOnly = true;
+		}else{
+			document.employeeform.FWisSpecialEmployee.checked = true;
+		}
+		
+	}
+	else
+		document.employeeform.FWAvailBillHours.readOnly = false;
+}
+
+var isNN = (navigator.appName.indexOf("Netscape")!=-1);
+var newScreen = 0;
+var alertMsg = '';
+function autoTab(input,len, e) {
+	var keyCode = (isNN) ? e.which : e.keyCode; 
+	var filter = (isNN) ? [0,8,9] : [0,8,9,16,17,18,37,38,39,40,46];
+	if(input.value.length >= len && !containsElement(filter,keyCode)) {
+		input.value = input.value.slice(0, len);
+		input.form[(getIndex(input)+1) % input.form.length].focus();
+	}
+	function containsElement(arr, ele) {
+		var found = false, index = 0;
+		while(!found && index < arr.length)
+			if(arr[index] == ele)
+				found = true;
+			else
+				index++;
+		return found;
+	}
+	function getIndex(input) {
+		var index = -1, i = 0, found = false;
+		while (i < input.form.length && index == -1)
+			if (input.form[i] == input)index = i;
+			else i++;
+		return index;
+	}	
+	return true;
+}
+
+//For Email Validattion.
+var testresults
+
+function checkemail( field )
+{
+    var str = field.value;
+    var filter=/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
+    
+    if (filter.test(str))
+        testresults=true;
+    else
+    {    
+        field.select();
+        alert("Please input a valid email address!");
+        testresults=false;
+    }
+    
+    return (testresults);
+}
+
+function checkbae( field )
+{
+    if( jsTrim( field.value ) == "" )
+    {
+        document.employeeform.FWEmail.value = "";
+        document.employeeform.FWEmail_Txt.focus();
+	alert('Please specify Email.');	
+	return false;	
+    }    
+
+    if (document.layers||document.getElementById||document.all)
+        return checkemail( field );
+    else
+        return true;
+}
+
+function validateAmount( field )
+{
+	var valid = "0123456789."
+	var ok = "yes";
+	var ok1 = "yes";
+	var temp;
+               var count = 0;
+	for (var i=0; i<field.value.length; i++) {
+		temp = "" + field.value.substring(i, i+1);
+		if (valid.indexOf(temp) == "-1") ok = "no";
+			if( temp == '.' )count++;
+	}		
+	
+	if( ok == "no" || count>1 ) 
+    {                
+        alert("Invalid entry! Only positive numbers are accepted. ");
+        field.focus();
+        field.select();
+        return(false);
+    }                   
+    return(true);
+}
+
+function compareTo(adate,bdate)
+{
+	a = adate.split('/');
+	b = bdate.split('/');
+
+	var sYr,eYr; 
+	// 80 is the middle value, for solving the YY format  
+	if ( parseInt(a[2]) > 80 ){
+		sYr = '19'+a[2];
+	}else{
+		sYr = '20'+a[2];
+	}
+	
+	if ( parseInt(b[2]) > 80 ){
+		eYr = '19'+b[2];
+	}else{
+		eYr = '20'+b[2];
+	}
+	
+	var sDate = new Date(sYr,a[0]-1,a[1]);
+	var eDate = new Date(eYr,b[0]-1,b[1]);
+	if (sDate < eDate )
+	{
+		return 1; 
+	}
+	else if(''+sDate == ''+eDate)
+	{
+		return 0;
+	}
+	else
+	{	
+		return -1;
+	}
+}
+
+var tempRehireDate='';
+function copyTermDate()
+{
+	try{
+		if(document.employeeform.FWIsRehire.checked == true){
+			if(document.employeeform.FWIsConDirect.checked == true){
+			document.employeeform.FWIsConDirect.checked = false;
+			document.employeeform.FWOldTermDate_RH.value = document.employeeform.FWOldTermDate_CD.value;
+			copyTermDateConDirect();
+			}else{		
+			document.employeeform.FWOldTermDate_RH.value = document.employeeform.FWTermDate.value;
+			}
+			document.employeeform.FWTermDate.value = '';
+			document.getElementById("reHireDateInfoTbl").style.visibility = "visible";
+			document.employeeform.FWRehireDate.value = tempRehireDate;						
+		}else{
+			if(document.employeeform.FWIsConDirect.checked == false){
+			document.employeeform.FWTermDate.value = document.employeeform.FWOldTermDate_RH.value;
+			}
+			document.employeeform.FWOldTermDate_RH.value = '';			
+			document.getElementById("reHireDateInfoTbl").style.visibility = "hidden";
+			tempRehireDate = document.employeeform.FWRehireDate.value;
+			document.employeeform.FWRehireDate.value = '';					
+		}
+	}catch(err){
+		
+	}
+	
+}
+var tempConDirectDate='';
+function copyTermDateConDirect()
+{
+	try{
+		if(document.employeeform.FWIsConDirect.checked == true){
+			if(document.employeeform.FWIsRehire.checked == true){
+				document.employeeform.FWIsRehire.checked =false;
+				document.employeeform.FWOldTermDate_CD.value = document.employeeform.FWOldTermDate_RH.value;
+				copyTermDate();
+			}else{
+				document.employeeform.FWOldTermDate_CD.value = document.employeeform.FWTermDate.value;
+			}
+				document.employeeform.FWTermDate.value = '';
+				document.getElementById("ConDateInfoTbl").style.visibility = "visible";
+				document.employeeform.FWConDirectHireDate.value = tempConDirectDate;	
+					
+		}else{
+			if(document.employeeform.FWIsRehire.checked == false){
+				document.employeeform.FWTermDate.value = document.employeeform.FWOldTermDate_CD.value;
+			}	
+				document.employeeform.FWOldTermDate_CD.value = '';				
+				document.getElementById("ConDateInfoTbl").style.visibility = "hidden";
+				tempConDirectDate = document.employeeform.FWConDirectHireDate.value;		
+				document.employeeform.FWConDirectHireDate.value = '';				
+		}
+	}catch(err){
+		
+	}
+	
+}	
+function NameValidation(name)
+{
+	
+	var iChars = "!#$%^&*()+=[]\\\';/{}|\":<>?";
+
+	  for (var i = 0; i < name.length; i++) {
+	  	if (iChars.indexOf(name.charAt(i)) != -1) {
+	  	alert ("The name has special characters. \nOnly @ , - _ . are allowed.\n Please try again.");
+	  	
+	 	  	return false;
+	  	}
+	  }
+		
+}
+
+function doValidation(ssn) {
+						/*(var matchArr = ssn.match(/^(\d{3})-?\d{2}-?\d{4}$/);
+                        var numDashes = ssn.split('-').length - 1;
+                        if (matchArr == null || numDashes == 1) {
+                        alert('Invalid SSN. Must be 9 digits, in the format NNN-NN-NNNN.');
+                        msg = "does not appear to be valid";
+                        document.employeeform.FWSsn.focus();
+                        return false;
+                        }
+                         */
+
+if( jsTrim(document.employeeform.FWFirstName.value) == "" )
+{
+    document.employeeform.FWFirstName.value = "";
+    document.employeeform.FWFirstName.focus();
+    alert('please specify FirstName');    
+    return false;
+}
+else
+{
+	var returnvalue;
+	returnvalue=NameValidation(document.employeeform.FWFirstName.value);
+	//document.employeeform.FWFirstName.select();
+	if ( returnvalue == false ) {
+	 	document.employeeform.FWFirstName.select();
+		return false;	
+	}
+}
+
+if( jsTrim(document.employeeform.FWLastName.value) == "" )
+{
+    document.employeeform.FWLastName.value = "";
+    document.employeeform.FWLastName.select();
+    alert('please specify LastName');    
+    return false;
+	
+}
+else
+{
+	var returnvalue;
+	returnvalue=NameValidation(document.employeeform.FWLastName.value);
+	//document.employeeform.FWFirstName.select();
+	if ( returnvalue == false ) {
+		document.employeeform.FWLastName.select();
+		return false;	
+	}
+}
+
+var NCfun = '<FIELD="FWNonCompanyfunctions">';
+if(NCfun == "True")	
+{
+	   document.employeeform.submit1.disabled = true;
+	   document.employeeform.action="/servlets/ProxyServlet";
+	   document.employeeform.submit();
+	   return true;
+}
+<FIELD="FWShowEmployeeDataStart1">
+
+if( document.employeeform.FWDepartmentID.value == "" )
+{
+	alert('please specify Department');
+	document.employeeform.FWDepartmentID.focus();
+	return false;
+	
+}
+
+if(document.employeeform.FWJobTitleID.value==1)
+{
+	if(document.employeeform.FWTermDate.value!= null && document.employeeform.FWTermDate.value!="" )
+	{
+		
+	}
+	else
+		{
+		alert('Please choose a valid Job Title');
+	document.employeeform.FWJobTitleID.focus();
+	return false;
+}
+
+}
+
+if(document.employeeform.FWLeadEngineer.value==0)
+{
+	if(document.employeeform.FWTermDate.value!= null && document.employeeform.FWTermDate.value!="" )
+	{
+		
+	}
+	else
+	{
+	alert('Please choose valid <FIELD="FW_LEADENGINEER_GROUPLABEL">');
+	document.employeeform.FWLeadEngineer.focus();
+	return false;
+}
+}
+if(document.employeeform.FWEngineeringManager.value==0)
+{
+	if(document.employeeform.FWTermDate.value!= null && document.employeeform.FWTermDate.value!="" )
+	{
+		
+	}
+	else
+	{
+	alert('Please choose valid <FIELD="FW_ENGMANAGER_GROUPLABEL">');
+	document.employeeform.FWEngineeringManager.focus();
+	return false;
+}
+}
+if(document.employeeform.FWPeopleManagerList.value==0)
+{
+	if(document.employeeform.FWTermDate.value!= null && document.employeeform.FWTermDate.value!="" )
+	{
+		
+	}
+	else
+	{
+	alert('Please choose valid <FIELD="FW_PEOPLEMANAGER_GROUPLABEL">');
+	document.employeeform.FWPeopleManagerList.focus();
+	return false;
+}
+}
+
+if(document.employeeform.FWTopLineManagerIdList.value==0)
+{
+	if(document.employeeform.FWTermDate.value!= null && document.employeeform.FWTermDate.value!="" )
+	{
+		
+	}
+	else
+	{
+	alert('Please choose valid <FIELD="FW_TOPLINEMANAGER_GROUPLABEL">');
+	document.employeeform.FWTopLineManagerIdList.focus();
+	return false;
+}
+}
+
+var field = document.employeeform.FWChargeabilityPercent;
+if( jsTrim( field.value ) == "" )
+{
+	if(document.employeeform.FWTermDate.value!= null && document.employeeform.FWTermDate.value!="" )
+	{
+		
+	}
+	else
+	{
+    document.employeeform.FWChargeabilityPercent.value = "";
+    document.employeeform.FWChargeabilityPercent.focus();
+	alert('Please specify Chargeability Percentage');	
+	return false;	
+} 
+} 
+if(!(isInteger(field.value) || isFloat(field.value))){
+	//document.employeeform.FWChargeabilityPercent.value = "";
+    alert('Chargeability Percentage should be a number');
+    document.employeeform.FWChargeabilityPercent.focus();
+	return false;	
+}else{
+	var chargePercent = parseFloat(field.value);
+	if(chargePercent > 100){
+		alert('Chargeability Percentage can not be greater than 100%');
+		document.employeeform.FWChargeabilityPercent.focus();
+		return false;
+	}
+}
+
+if( checkbae( document.employeeform.FWEmail ) == false )    
+    return false;   
+
+if( DateFormatChecking( document.employeeform.FWHireDate , "hiredate" ,"*" ) == false )
+    return false;
+if( DateFormatChecking( document.employeeform.FWServiceDate , "Service date" ,"*" ) == false )
+    return false;
+if( DateFormatChecking( document.employeeform.FWTermDate , "termdate", "" ) == false )
+    return false;
+
+if(document.employeeform.FWTermDate.value == "" &&  document.employeeform.FWTermClassification.value > 0){
+	alert('Term classification can be selected only for a terminated employee.Please Enter Term Date');
+	document.employeeform.FWTermDate.select();	
+	return false;
+}
+// Modification related to Rehire Date 
+if(document.employeeform.FWIsRehire.checked == true) {
+		document.employeeform.FWOldTermDate.value = document.employeeform.FWOldTermDate_RH.value
+	}else if(document.employeeform.FWIsConDirect.checked == true) {
+		document.employeeform.FWOldTermDate.value = document.employeeform.FWOldTermDate_CD.value
+	}else{
+		document.employeeform.FWOldTermDate.value = "";
+	}
+if(document.employeeform.FWIsRehire.checked == true) {
+	if( DateFormatChecking( document.employeeform.FWOldTermDate , "old term date", "" ) == false )
+    	return false;
+	if(document.employeeform.FWRehireDate.value=="")
+	{
+		alert('Rehire date is mandatory for Rehired Employee');
+		return false;
+	}else{
+		if( DateFormatChecking( document.employeeform.FWRehireDate , "rehire date", "" ) == false )
+	    	return false;
+    	if(compareTo(document.employeeform.FWHireDate.value,document.employeeform.FWRehireDate.value) != 1 ){
+        	alert('Rehire date should be greater than Hire date');
+        	return false;
+    	}
+    	if(compareTo(document.employeeform.FWOldTermDate.value,document.employeeform.FWRehireDate.value) != 1 ){
+    		alert('Rehire date should be greater than Old term date');
+        	return false;
+    	}
+    	if(document.employeeform.FWTermDate.value!=""){
+        	if(compareTo(document.employeeform.FWRehireDate.value,document.employeeform.FWTermDate.value) != 1){
+    			alert('Term date should be greater than Rehire date');
+        		return false;
+        	}
+    	}   	
+	}	
+	
+}else{
+	if(document.employeeform.FWRehireDate.value!="")
+	{	
+		alert('Rehire date applicable only for Rehired Employee');
+		document.employeeform.FWRehireDate.select();
+		return false;
+	}
+	if(document.employeeform.FWOldTermDate.value!="" && document.employeeform.FWIsConDirect.checked == false)
+	{	
+		alert('Old Term date applicable only for Rehired or Contract to Direct hired Employee');
+		document.employeeform.FWOldTermDate.select();
+		return false;
+	}
+}
+if(document.employeeform.FWIsConDirect.checked == true) {
+	if(document.employeeform.FWConDirectHireDate.value=="")
+	{
+		alert('Direct Hire date is mandatory for Contract to Direct Hired Employees');
+		return false;
+	}else if(compareTo(document.employeeform.FWOldTermDate.value,document.employeeform.FWConDirectHireDate.value) != 1 ){		
+		alert('Direct Hire date should be greater than old Term date');
+    	return false;
+	}
+
+}else{
+	if(document.employeeform.FWConDirectHireDate.value!=""){
+		alert('Direct Hire date is applicable only for contract to direct hired employees');
+		return false;
+	}
+}	
+if(document.employeeform.FWEffectiveFrom != null)
+{
+	if( DateFormatChecking( document.employeeform.FWEffectiveFrom , "effectivefrom", "" ) == false )
+	    return false;
+
+	if(document.employeeform.FWEffectiveFrom.value==''){
+		alert('Please provide valid effective date');
+		document.employeeform.FWEffectiveFrom.focus();
+		return false;
+	}
+
+	var c1 = compareTo(document.employeeform.FWHireDate.value,'<FIELD="FWServerDate">');
+	if(c1==-1)
+	{
+		if(document.employeeform.FWHireDate.value!=document.employeeform.FWEffectiveFrom.value){
+			alert('Effective From should match with Hire Date');
+			document.employeeform.FWEffectiveFrom.focus();
+			return false;
+		}
+	}
+
+	if(curHireDate!=document.employeeform.FWHireDate.value && document.employeeform.FWHireDate.value!=document.employeeform.FWEffectiveFrom.value ){
+		alert('Effective From should match with Hire Date');
+		document.employeeform.FWEffectiveFrom.focus();
+		return false;
+	}
+	
+    var v1 = compareTo('<FIELD="FWServerDate">',document.employeeform.FWEffectiveFrom.value);
+	var v2 = compareTo('<FIELD="FWLastAuditDate">',document.employeeform.FWEffectiveFrom.value);
+	var v4 = compareTo('<FIELD="FWLastAuditDate">','<FIELD="FWServerDate">');
+	//alert(v1);alert(v2);alert(v3);
+	if((v1==1 || v2== -1 ) && curHireDate==document.employeeform.FWHireDate.value)
+	{
+		var v3 = compareTo(document.employeeform.FWHireDate.value,'<FIELD="FWServerDate">');
+		if(v3!=-1){			
+			if(v4!=-1){
+				alert("Please provide the 'Effective From' date between <FIELD="FWLastAuditDate"> and <FIELD="FWServerDate">");
+				return false;
+			}
+		}		
+	}
+	
+	
+	
+	if(document.employeeform.FWAvailBillHours.value==''){
+		alert('Please provide valid Avail Bill Hours');
+		document.employeeform.FWAvailBillHours.focus();
+		return false;
+	}
+	
+	if(c1!=-1 && v4!=-1 && curAvailHrs == document.employeeform.FWAvailBillHours.value && curHireDate==document.employeeform.FWHireDate.value){
+		if(curEffectiveFrom != document.employeeform.FWEffectiveFrom.value){
+			var v= compareTo(curEffectiveFrom,document.employeeform.FWEffectiveFrom.value);
+			if( v != 0){
+				alert('Please make change on Available billable hour');
+				return false;
+			}
+		}
+	}
+
+	if(curAvailHrs != document.employeeform.FWAvailBillHours.value){
+		if(curEffectiveFrom == document.employeeform.FWEffectiveFrom.value){
+			var t = confirm('Avail Bill hours('+document.employeeform.FWAvailBillHours.value+') will effective from '+curEffectiveFrom+'.Are you want to continue?' );
+			if(!t){
+				document.employeeform.FWEffectiveFrom.select();
+				return false;
+			}			
+		}
+	}
+
+if( CheckTwoDatesValid( document.employeeform.FWHireDate,document.employeeform.FWEffectiveFrom,"hire date","Effective from","","*" ) == false ) 
+    return false;
+}
+if( CheckTwoDatesValid( document.employeeform.FWHireDate,document.employeeform.FWServiceDate,"hire date","Service date","","*" ) == false ) 
+    return false;
+if( CheckTwoDatesValid( document.employeeform.FWHireDate,document.employeeform.FWTermDate,"start date","End date","","*" ) == false ) 
+    return false;
+
+alertMsg = '';
+if( !validateAmount(document.employeeform.FWJpAllocatedHours) )
+	return false;
+
+if( !validateAmount(document.employeeform.FWSSEAllocatedHours))	
+	return false;	
+
+if( !validateAmount(document.employeeform.FWAvailBillHours))	
+	return false;
+
+document.employeeform.FWVacationHours.value = jsRTrim(document.employeeform.FWVacationHours.value);
+document.employeeform.FWPBAHours.value = jsRTrim(document.employeeform.FWPBAHours.value);
+document.employeeform.FWCompTimeHours.value = jsRTrim(document.employeeform.FWCompTimeHours.value);
+document.employeeform.FWHolidayFloatingTimeHours.value = jsRTrim(document.employeeform.FWHolidayFloatingTimeHours.value);
+if(document.employeeform.FWVacationHours.value=='')
+{
+	alert('Vacation Time off is mandatory. Please provide valid value.');
+	document.employeeform.FWVacationHours.focus();
+	return false;
+}
+else if(document.employeeform.FWPBAHours.value=='')
+{
+	alert('PBA Time off is mandatory. Please provide valid value.');
+	document.employeeform.FWPBAHours.focus();
+	return false;
+}
+else if(document.employeeform.FWCompTimeHours.value=='')
+{
+	alert('Comp Time off is mandatory. Please provide valid value.');
+	document.employeeform.FWCompTimeHours.focus();
+	return false;
+}
+else if(document.employeeform.FWHolidayFloatingTimeHours.value=='')
+{
+	alert('Holiday Floating Time off is mandatory. Please provide valid value.');
+	document.employeeform.FWHolidayFloatingTimeHours.focus();
+	return false;
+}
+if( !validateAmount(document.employeeform.FWVacationHours) )
+	return false;
+if( !validateAmount(document.employeeform.FWPBAHours) )
+	return false;
+if( !validateAmount(document.employeeform.FWCompTimeHours) )
+	return false;
+if( !validateAmount(document.employeeform.FWHolidayFloatingTimeHours) )
+	return false;	
+
+try{
+	if(document.employeeform.FWisProjectLeader.checked)
+	{
+		ispl1 = 1;
+	}
+	else
+	{
+		ispl1 = 0;
+	}
+	if(document.employeeform.FWisSrSalesEngineer.checked)
+	{
+		issse1 = 1;
+	}
+	else
+	{
+		issse1 = 0;
+	}
+	if(document.employeeform.FWisSalesEngineer.checked)
+	{
+		isse1 = 1;
+	}
+	else
+	{
+		isse1 = 0;
+	}
+	if(document.employeeform.FWisAccountManager.checked)
+	{
+		isam1 = 1;
+	}
+	else
+	{
+		isam1 = 0;
+	}
+	if(document.employeeform.FWisVertical.checked)
+	{
+		isvert1 = 1;
+	}
+	else
+	{
+		isvert1 = 0;
+	}
+	if(document.employeeform.FWAnalysisVertical.checked)
+	{
+		isAvert1 = 1;
+	}
+	else
+	{
+		isAvert1 = 0;
+	}
+	if(document.employeeform.FWElecVertical.checked)
+	{
+		isEvert1 = 1;
+	}
+	else
+	{
+		isEvert1 = 0;
+	}
+	if(document.employeeform.FWManFactVertical.checked)
+	{
+		isMvert1 = 1;
+	}
+	else
+	{
+		isMvert1 = 0;
+	}
+	if(document.employeeform.FWisDirectRep.checked)
+	{
+		isDrep1 = 1;
+	}
+	else
+	{
+		isDrep1 = 0;
+	}
+	if(document.employeeform.FWisAutoAllocation.checked)
+	{
+		isAutoJp1 = 1;
+	}
+	else
+	{
+		isAutoJp1 = 0;
+	}
+	if(document.employeeform.FWisSSEAutoAllocation.checked)
+	{
+		isAutoSse1 = 1;
+	}
+	else
+	{
+		isAutoSse1 = 0;
+	}
+	if(document.employeeform.FWisChecker.checked)
+	{
+		ischkr1 = 1;
+	}
+	else
+	{
+		ischkr1 = 0;
+	}
+	if(document.employeeform.FWisEngAdmin.checked)
+	{
+		isEAdmn1 = 1;
+	}
+	else
+	{
+		isEAdmn1 = 0;
+	}
+	
+	
+	
+	if(document.employeeform.FWisJrPartner.checked)
+	{
+		isJrp1 = 1;
+	}
+	else
+	{
+		isJrp1 = 0;
+	}
+
+if(document.employeeform.FWisAutoAllocation.checked)
+	{
+		isAutoJp1 = 1;
+	}
+	else
+	{
+		isAutoJp1 = 0;
+	}
+
+	if(document.employeeform.FWisPeopleManager.checked)
+	{
+		isPManager1 = 1;
+	}
+	else
+	{
+		isPManager1 = 0;
+	}
+
+	if(document.employeeform.FWisOffshoreManager.checked)
+	{
+		isOffShoreManager1 = 1;
+	}
+	else
+	{
+		isOffShoreManager1 = 0;
+	}
+
+	if(document.employeeform.FWisElectricalSystemsIntegration.checked)
+	{
+		isElectricalSysIntegration1 = 1;
+	}
+	else
+	{
+		isElectricalSysIntegration1 = 0;
+	}
+
+
+
+
+if(ispl != ispl1)
+{
+	if(ispl1 == 1)
+	{
+		
+	}
+	else
+	{
+		alertMsg = '<FIELD="FW_PROJECTLEADER_GROUPLABEL"> \n';
+
+	}
+	
+}
+
+var sse_unplugged=0;
+var jp_unplugged=0;
+
+
+if(issse != issse1)
+{
+	
+	if(issse1 == 1)
+	{
+		 
+	}
+	else
+	{
+
+		sse_unplugged=1;
+
+
+		alertMsg = alertMsg+'<FIELD="FW_SRSALESENGINEER_GROUPLABEL"> \n';
+
+	}
+
+}
+
+if(isse != isse1)
+{
+		if(isse1 == 1)
+	{
+		
+	}
+	else
+	{
+		alertMsg = alertMsg+'<FIELD="FW_SALESENGINEER_GROUPLABEL"> \n';
+
+	}
+
+}
+if(isam != isam1)
+{
+	if(isam1 == 1)
+	{
+		
+	}
+	else
+	{
+		alertMsg = alertMsg+'<FIELD="FW_ACCOUNTEXEC_GROUPLABEL"> \n';
+
+	}
+
+
+}
+if(isvert != isvert1)
+{
+		if(isvert1 == 1)
+	{
+		
+	}
+	else
+	{
+		alertMsg = alertMsg+'<FIELD="FW_VERTICAL_GROUPLABEL"> \n';
+
+	}
+
+
+}
+
+if(isAvert != isAvert1 )
+{
+			if(isAvert1 == 1)
+	{
+		
+	}
+	else
+	{
+		alertMsg = alertMsg+'<FIELD="FW_ANALYSISVERTICAL_GROUPLABEL"> \n';
+
+	}
+
+}
+
+if(isEvert != isEvert1)
+{
+	if(isEvert1 == 1)
+	{
+		
+	}
+	else
+	{
+		alertMsg = alertMsg+'<FIELD="FW_ELECTRICALVERTICAL_GROUPLABEL"> \n';
+
+	}
+
+}
+
+if(isMvert != isMvert1)
+{
+		if(isMvert1== 1)
+	{
+		
+	}
+	else
+	{
+		alertMsg = alertMsg+'<FIELD="FW_MANUFACTURINGVERTICAL_GROUPLABEL"> \n';
+
+	}
+
+}
+
+if(isDrep != isDrep1)
+{
+	if(isDrep1== 1)
+	{
+		
+	}
+	else
+	{
+		alertMsg = alertMsg+'<FIELD="FW_DIRECTREP_GROUPLABEL"> \n';
+
+	}
+
+
+}
+
+if(isAutoSse != isAutoSse1)
+{
+		if(isAutoSse1== 1  ||  sse_unplugged==1 )
+	{
+		
+	}
+	else
+	{
+		alertMsg = alertMsg+'Receive Automated Time Allocation as <FIELD="FW_SRSALESENGINEER_GROUPLABEL"> \n';
+
+	}
+
+}
+if(ischkr != ischkr1)
+{
+		if(ischkr1== 1)
+	{
+		
+	}
+	else
+	{
+		alertMsg = alertMsg+'<FIELD="FW_CHECKERS_GROUPLABEL"> \n';
+
+	}
+
+}
+
+
+if(isOffShoreManager != isOffShoreManager1)
+{
+	if(isOffShoreManager1 == 1)
+	{	
+			
+	}
+	else
+	{
+		
+		alertMsg = alertMsg+'<FIELD="FW_OFFSHOREMANAGER_GROUPLABEL"> \n';
+
+	}
+	
+}
+
+if(isElectricalSysIntegration != isElectricalSysIntegration1)
+{
+	if(isElectricalSysIntegration1 == 1)
+	{	
+			
+	}
+	else
+	{
+		
+		alertMsg = alertMsg+'<FIELD="FW_ELECTRICALSYSTEMINTEGRATION_GROUPLABEL"> \n';
+
+	}
+	
+}
+
+if(isEAdmn != isEAdmn1)
+{
+		if(isEAdmn1 == 1)
+	{
+		
+	}
+	else
+	{
+		alertMsg = alertMsg+'<FIELD="FW_ENGADMIN_GROUPLABEL"> \n';
+
+	}
+
+}
+if(isPManager != isPManager1)
+{
+		if(isPManager1 == 1)
+	{
+		
+	}
+	else
+	{
+		alertMsg = alertMsg+'<FIELD="FW_PEOPLEMANAGER_GROUPLABEL"> \n';
+
+	}
+
+}
+if(isJrp != isJrp1)
+{
+	if(isJrp1 == 1)
+	{
+		
+	}
+	else
+	{
+
+
+		jp_unplugged=1;
+
+		alertMsg = alertMsg+'<FIELD="FW_JRPARTNER_GROUPLABEL"> \n';
+
+	}
+	
+}
+
+
+if(isAutoJp != isAutoJp1)
+{
+	if(isAutoJp1 == 1 || jp_unplugged ==1 )
+	{	
+	}
+	else
+	{
+
+		alertMsg = alertMsg+'Receive Automated Time Allocation as <FIELD="FW_JRPARTNER_GROUPLABEL"> \n';
+		}
+}
+}
+catch(err)
+{
+}
+<FIELD="FWShowEmployeeDataEnd1">
+
+ if( document.employeeform.FWisJrPartner.checked )
+    {
+
+    if( document.employeeform.FWisAutoAllocation.checked 
+        && document.employeeform.FWJpAllocatedHours.value > 60  )
+        {
+            document.employeeform.FWJpAllocatedHours.focus();                       
+            document.employeeform.FWJpAllocatedHours.select(); 
+            alert("Hours can't exceed to <FIELD="FW_JRPARTNER_GROUPLABEL"> Allocated limit(60 hours)");                        
+            return false;
+        }    
+    }
+    
+    if( document.employeeform.FWisSrSalesEngineer.checked )
+    {
+
+    if( document.employeeform.FWisSSEAutoAllocation.checked 
+        && document.employeeform.FWSSEAllocatedHours.value > 40  )
+        {
+            document.employeeform.FWSSEAllocatedHours.focus();                       
+            document.employeeform.FWSSEAllocatedHours.select();         
+            alert("Hours can't exceed to <FIELD="FW_SRSALESENGINEER_GROUPLABEL"> Allocated limit(40 hours)");
+            return false;
+        }    
+    }
+
+ 
+if(newScreen != 1)
+{
+
+
+if(alertMsg == '')
+{
+		console.log("Alert message is null")
+	   document.employeeform.submit1.disabled = true ;
+	   document.employeeform.action="/servlets/ProxyServlet";
+	   document.employeeform.submit();
+}
+else
+{
+	if(confirm('Are you sure in removing the following company functions?\n\n'+alertMsg))
+	{
+			document.employeeform.submit1.disabled = true;
+	   document.employeeform.action="/servlets/ProxyServlet";
+	   document.employeeform.submit();
+	
+	}
+	else
+	{
+
+	}
+}
+}
+else
+{
+		document.employeeform.submit1.disabled = false;
+	   document.employeeform.action="/servlets/ProxyServlet";
+	   document.employeeform.submit();
+
+}
+
+
+   
+  // document.employeeform.action="/servlets/ProxyServlet";
+  // document.employeeform.submit();
+}
+
+
+function jpAutoAllocation()
+{
+	if(document.employeeform.FWisJrPartner.checked)
+	{
+		//alert('hai this iscame false ');
+		
+		document.employeeform.FWisAutoAllocation.disabled = false;
+		if(document.employeeform.FWisAutoAllocation.checked)
+		{
+			document.employeeform.FWJpAllocatedHours.disabled = false;
+			if(document.employeeform.FWJpAllocatedHours.value == "")
+			{
+				document.employeeform.FWJpAllocatedHours.value = "0.00";
+			}
+		}
+		else
+		{
+			document.employeeform.FWJpAllocatedHours.disabled = true;
+		}
+		
+	}
+	else
+	{
+		document.employeeform.FWisAutoAllocation.disabled = true;
+		document.employeeform.FWJpAllocatedHours.disabled = true;
+		document.employeeform.FWisAutoAllocation.checked = false;
+		document.employeeform.FWJpAllocatedHours.value = "";
+		//alert(document.employeeform.FWisJrPartner.checked);
+	}
+	
+	}
+	
+function SSEAutoAllocation()
+{
+	if(document.employeeform.FWisSrSalesEngineer.checked)
+	{
+		//alert('hai this iscame false ');
+		
+		document.employeeform.FWisSSEAutoAllocation.disabled = false;
+		if(document.employeeform.FWisSSEAutoAllocation.checked)
+		{
+			document.employeeform.FWSSEAllocatedHours.disabled = false;
+			if(document.employeeform.FWSSEAllocatedHours.value == "")
+			{
+				document.employeeform.FWSSEAllocatedHours.value = "0.00";
+			}
+		}
+		else
+		{
+			document.employeeform.FWSSEAllocatedHours.disabled = true;
+		}
+		
+	}
+	else
+	{
+		document.employeeform.FWisSSEAutoAllocation.disabled = true;
+		document.employeeform.FWSSEAllocatedHours.disabled = true;
+		document.employeeform.FWisSSEAutoAllocation.checked = false;
+		document.employeeform.FWSSEAllocatedHours.value = "";
+		//alert(document.employeeform.FWisSSEngineeer.checked);
+	}	
+}
+function SubmitEmployeePerm()
+{
+	document.employeeform.action="/jsp/UserPermission.jsp";
+	document.employeeform.submit();
+}
+function SubmitReportPerm()
+{
+	document.employeeform.action="/jsp/ReportPermission.jsp";
+	document.employeeform.submit();
+
+}
+function IvpInfoNav()
+{
+    var ivpflag = '<FIELD="FWValidInfoUser">';
+    if(ivpflag == "true")
+        {
+            alert('Employee <FIELD="FWOldEmail"> have not yet registered.');
+            return false;
+        }
+        return true;
+}
+
+function jsRTrim(Ptext)
+{
+ //CHECKING FOR STRING LENGTH
+ if (Ptext.length > 1)
+ {
+  while (1) 
+  {
+   //CHECKING FOR SPACE AT LAST POSITION
+   if (Ptext.substring(Ptext.length - 1, Ptext.length) != " ")
+   break;
+   //TRIM THE STRING BY REMOVING LAST SPACE CHARACTER
+   Ptext = Ptext.substring(0, Ptext.length - 1);
+  }
+ }
+ return Ptext;
+}
+
+//FUNCTION FOR RIGHT TRIM
+function jsLTrim(Ptext)
+{
+ //CHECKING FOR STRING LENGTH
+ if (Ptext.length > 1)
+ {
+  while (1) 
+  {
+   //CHECKING FOR SPACE AT FIRST POSITION
+   if (Ptext.indexOf(" ") !=0)
+   break;
+   //TRIM THE STRING BY REMOVING FIRST SPACE CHARACTER
+   Ptext = Ptext.substring(1, Ptext.length);
+  }
+ }
+ return Ptext;
+}
+
+//FUNCTION FOR BOTH RIGHT TRIM AND LEFT TRIM
+function jsTrim(Ptext)
+{
+ if (Ptext.length > 1)
+ {
+  Ptext = jsRTrim(Ptext)
+  Ptext = jsLTrim(Ptext)
+ } 
+ return Ptext; 
+}
+
+//  End -->
+
+function keypresseventnoonly( e ) // To Allow Nos with point Only
+{
+    var unicode=(window.event)?e.keyCode:e.which;      
+    
+ 	if((unicode!=8)&&(unicode!=0)&&(unicode!=13)&&(unicode!=46))
+	if( (unicode<46) || (unicode>57)||(unicode == 47) || (unicode == 32) )  
+	{   
+		unicode=0;
+		return false;
+	 }
+         else      
+            return true;                     
+}
+
+// 32 space
+// 46 / for date
+// 47 . for decimal format numbers
+
+function validateDateNumber( field  )
+{
+    var valid = "0123456789/"
+    var ok = "yes";    
+    var temp;    
+    
+    if ( jsTrim(field.value).length == 0 )
+        {   
+            field.select();
+            alert("Please specify hiredate.");                        
+            field.value="";
+            field.focus();
+            return false;
+        }
+    
+    for (var i=0; i<field.value.length; i++) 
+    {
+        temp = "" + field.value.substring(i, i+1);
+        if (valid.indexOf(temp) == "-1") ok = "no";        
+    }	
+    
+    if( ok == "no" ) 
+    {                
+        alert("Invalid Characters.");
+        field.focus();
+        field.select();
+        return(false);
+    }    
+    
+    if ( isDate(field.value) == false)
+     {
+        /*var oRange = field.createTextRange();
+        oRange.moveStart("character", 0);
+        oRange.moveEnd("character", -6);      
+        oRange.select();                   */
+	return false;
+     }
+    
+    return true;
+}
+
+function JpAllocatedHoursfun( field )
+{
+    if( !validateAmount( field ) )
+	return false;
+    
+       if( document.employeeform.FWisJrPartner.checked )
+    {
+
+    if( document.employeeform.FWisAutoAllocation.checked 
+        && document.employeeform.FWJpAllocatedHours.value > 60  )
+        {
+            document.employeeform.FWJpAllocatedHours.focus();                       
+            document.employeeform.FWJpAllocatedHours.select(); 
+            alert("Hours can't exceed to <FIELD="FW_JRPARTNER_GROUPLABEL"> Allocated limit(60 hours)");                        
+            return false;
+        }    
+    }
+    
+    return true;    
+}
+
+function SSEAllocatedHoursfun( field )
+{
+    if( !validateAmount( field ) )
+	return false;
+    
+    if( document.employeeform.FWisSrSalesEngineer.checked )
+    {
+
+    if( document.employeeform.FWisSSEAutoAllocation.checked 
+        && document.employeeform.FWSSEAllocatedHours.value > 40  )
+        {
+            document.employeeform.FWSSEAllocatedHours.focus();                       
+            document.employeeform.FWSSEAllocatedHours.select();         
+            alert("Hours can't exceed to <FIELD="FW_SRSALESENGINEER_GROUPLABEL"> Allocated limit(40 hours)");
+            return false;
+        }    
+    }
+    
+    return true;    
+}
+function bodyOnLoad(){
+	if(document.employeeform.FWEmail_Txt!=null)
+		document.employeeform.FWEmail_Txt.value = document.employeeform.FWEmail.value;
+	loadCurrVal();
+	loadAvailBillHrs(0);
+	loadSubCompList();
+	displayRehire();
+	displayConToDirect();
+	disable_ReadOnlyField();
+	return true;
+}
+
+function displayRehire(){
+	try{
+		var termdate = document.employeeform.FWTermDate;
+		if((termdate!=null && termdate.value=="") && document.employeeform.FWIsRehire.checked == false && document.employeeform.FWIsConDirect.checked == false){
+			document.getElementById("reHireInfoTbl").style.visibility = "hidden";
+		}
+			if(document.employeeform.FWIsRehire.checked == true){
+				document.getElementById("reHireDateInfoTbl").style.visibility = "none";								
+			}
+			else{
+				document.getElementById("reHireDateInfoTbl").style.visibility = "hidden";				
+			}
+		
+		
+	}catch(e){}
+}
+function displayConToDirect(){
+	try{
+		var termdate = document.employeeform.FWTermDate;
+		if((termdate!=null && termdate.value=="") && document.employeeform.FWIsConDirect.checked == false && document.employeeform.FWIsRehire.checked == false){
+			document.getElementById("ConToDirectTbl").style.visibility = "hidden";
+		}
+			if(document.employeeform.FWIsConDirect.checked == true){
+				document.getElementById("ConDateInfoTbl").style.visibility = "none";								
+			}
+			else{
+				document.getElementById("ConDateInfoTbl").style.visibility = "hidden";				
+			}
+		
+		
+	}catch(e){}
+}
+function disableField(field,isDisable){
+	if(field!=null)
+		field.disabled = isDisable;
+}
+
+function disable_ReadOnlyField(){
+	
+	//Changing of Employee Email Address through Admin group user cause problem	
+	//var isDisable = "<FIELD="FWisDisabled">"=="true" ? true : false;	
+	var isDisable = "<FIELD="FWisDisabled">"=="truefalse" ? true : false;
+	
+	if(isDisable){
+		disableField(	document.employeeform.FWTitle	,isDisable);
+		disableField(	document.employeeform.FWDepartmentID	,isDisable);
+		disableField(	document.employeeform.FWEmail_Txt	,isDisable);
+		disableField(	document.employeeform.FWJobTitleID	,isDisable);
+		disableField(	document.employeeform.FWAccountID	,isDisable);
+		disableField(	document.employeeform.FWAvailBillHours	,isDisable);
+		disableField(	document.employeeform.FWisSpecialEmployee	,isDisable);
+		disableField(	document.employeeform.FWEffectiveFrom	,isDisable);
+		disableField(	document.employeeform.FWCompetencyCenterId	,isDisable);
+		disableField(	document.employeeform.FWSubCompetencyCenterId	,isDisable);
+		disableField(	document.employeeform.FWChargeabilityPercent	,isDisable);
+		disableField(	document.employeeform.FWHireDate	,isDisable);
+		disableField(	document.employeeform.FWServiceDate	,isDisable);
+		disableField(	document.employeeform.FWIsRehire	,isDisable);
+		disableField(	document.employeeform.FWRehireDate	,isDisable);
+		disableField(	document.employeeform.FWOldTermDate_RH,isDisable);
+		disableField(	document.employeeform.FWOldTermDate_CD,isDisable);
+		disableField(	document.employeeform.FWTermDate	,isDisable);
+		disableField(	document.employeeform.FWEngineeringManager	,isDisable);
+		disableField(	document.employeeform.FWPeopleManagerList	,isDisable);
+		disableField(	document.employeeform.FWisJrPartner	,isDisable);
+		disableField(	document.employeeform.FWisAutoAllocation	,isDisable);
+		disableField(	document.employeeform.FWJpAllocatedHours	,isDisable);
+		disableField(	document.employeeform.FWisSrSalesEngineer	,isDisable);
+		disableField(	document.employeeform.FWisSSEAutoAllocation	,isDisable);
+		disableField(	document.employeeform.FWSSEAllocatedHours	,isDisable);
+		disableField(	document.employeeform.FWisProjectLeader	,isDisable);
+		disableField(	document.employeeform.FWisSalesEngineer	,isDisable);
+		disableField(	document.employeeform.FWisAccountManager	,isDisable);
+		disableField(	document.employeeform.FWisDirectRep	,isDisable);
+		disableField(	document.employeeform.FWisVertical	,isDisable);
+		disableField(	document.employeeform.FWAnalysisVertical	,isDisable);
+		disableField(	document.employeeform.FWElecVertical	,isDisable);
+		disableField(	document.employeeform.FWManFactVertical	,isDisable);
+		disableField(	document.employeeform.FWisChecker	,isDisable);
+		disableField(	document.employeeform.FWisEngAdmin	,isDisable);
+		disableField(	document.employeeform.FWisPeopleManager	,isDisable);
+		disableField(	document.employeeform.FWisAdminGroup	,isDisable);		
+		disableField(	document.employeeform.FWisLeadEng	,isDisable);
+		disableField(	document.employeeform.FWisEngManager	,isDisable);
+		disableField(	document.employeeform.FWisPowerSystem	,isDisable);
+		disableField(	document.employeeform.FWLeadEngineer	,isDisable);
+		disableField(	document.employeeform.FWTermClassification	,isDisable);
+		disableField(	document.employeeform.FWVacationHours	,isDisable);
+		disableField(	document.employeeform.FWPBAHours	,isDisable);
+		disableField(	document.employeeform.FWCompTimeHours	,isDisable);
+		disableField(	document.employeeform.FWHolidayFloatingTimeHours	,isDisable);
+	}
+}
+
+function doAssignments(){
+	document.employeeform.FWEmail.value = document.employeeform.FWEmail_Txt.value;	
+}
+
+function resetForm(){
+	document.employeeform.reset();
+	loadSubCompList();
+}
+function removeDirectHireDate(){
+	if(document.employeeform.FWIsConDirect.checked == false)
+	document.employeeform.FWConDirectHireDate.value = "";
+}
+function LoadServiceDate(obj){	
+	var hireDate = obj.value;	
+	if(document.employeeform.FWCurrentPage.value == 1){ 
+		document.employeeform.FWServiceDate.value = hireDate;
+	}
+}
+function addEmployee()
+{
+	doAssignments() ;
+	doValidation(1);
+}
+</script>
+
+	</head>
+
+	<body onload="bodyOnLoad();"  >
+		<br>
+		
+	
+		<form name="employeeform" action="/servlets/ProxyServlet">
+			<input type="hidden" name="FWModule" value="admin_employee">
+			<input type="hidden" name="FWCurrentPage" value="<FIELD="FWCurrentPage">">
+			<input type="hidden" name="FWSubmit" value="true">
+			<input type="hidden" name="FWCurrSession" value="<FIELD="FWCurrSession">">
+			<input type="hidden" name="FWEmployeeId" value="<FIELD="FWEmployeeID">">
+			<input type="hidden" name="FWEmail" value="<FIELD="FWEmail">">
+			<input type="hidden" name="FWOldTermDate" value="<FIELD="FWOldTermDate">">
+			<center>				
+				<table class ="style2 table_cellpad2">
+				<tr>
+					<td></td><td></td><td colspan="7" class="align_left">* - Indicates Required Field </td>
+				</tr>
+					<tr>		
+						<td></td>
+						<td></td>
+						<FIELD="FWShowCodeAccessButtonStart">
+						<td class="align_right">
+							<input type="submit" class = "style1" name="FWCodeAccessButton" value="Activity Code Access"/>
+						</td>
+						<FIELD="FWShowCodeAccessButtonEnd">
+                                                
+						<FIELD="FWShowEmpSecureInfoStart">
+						<td  class="align_right">
+							<input type="submit"  class = style1 name="FWPrivacyDetails"   value="Employee Secure Info">
+						</td>
+						<FIELD="FWShowEmpSecureInfoEnd">
+							
+						<FIELD="FWShowHRMInfoStart">
+						<td colspan="6" class="align_center">
+							<input type="submit"  class = style1 name="FWHRMToolInfo"  value="IVP Info" onclick="return IvpInfoNav();">
+						</td>
+						<FIELD="FWShowHRMInfoEnd">
+
+						<FIELD="FWShowFeaturePermStart">
+						<td colspan="6" class="align_center">
+							<input type="button"  class = style1 name="FWUserPerm"  value="Feature Perms" onclick="SubmitEmployeePerm();">
+						</td>
+						<FIELD="FWShowFeaturePermEnd">
+						
+						<FIELD="FWShowReportPermStart">
+						<td colspan="6" class="align_center">
+							<input type="button"  class = style1 name="FWReportPerm"  value="Report Perms" onclick="SubmitReportPerm();">
+						</td>
+						<FIELD="FWShowReportPermEnd">
+						
+
+						
+
+					</tr>
+			</table>
+			<table class="subheader table_cellpad2 table_width100">		
+					<tr>
+						<td class="align_right"  > <!-- *Emp.Num.: --></td>
+						<td class="align_left">
+							<input type="hidden"  class = style1 size="5" maxlength="4"   name="FWEmployeeNum" value="0000">
+						</td>
+					</tr>
+					<!--
+					<tr>
+						<td class="align_right">*SSN:</td>
+						<td class="align_left_colspan">
+							<input type="text" size="15" maxlength="11" name="FWSsn" value="<FIELD="FWSsn">">
+						</td>
+					</tr>
+					-->
+					<tr>
+						<td class="align_right"   >*First Name:</td>
+						<td class="align_left" >
+							<input type="text" class = style1  name="FWFirstName"   size="30" maxlength="25" value="<FIELD="FWFirstName">">
+						</td>
+						<td class="align_right"     >MI:</td>
+						<td class="align_left">
+							<input type="text"  class = style1 name="FWMiddleInitial"  size="2" maxLength="1" value="<FIELD="FWMiddleInitial">">
+						<td class="align_right"    >*Last Name:</td>
+						<td class="align_left">
+							<input type="text"  class = style1 name="FWLastName" size="20"   maxlength="25" value="<FIELD="FWLastName">">
+						</td>
+					</tr>					
+					<tr>
+						<td class="align_right"      >Title:</td>
+						<td class="align_left" >
+							<input type="text"  class = style1 name="FWTitle" size="30"   maxlength="50" value="<FIELD="FWTitle">" <FIELD="FWNoncompanyfunMode">>
+						</td>
+						<td class="align_right"    >*Location:</td>
+						<td class="align_left"    >
+							<select name="FWDepartmentID"  class = style1 onChange="loadAvailBillHrs(1);"  <FIELD="FWNoncompanyfunMode">>
+								<FIELD="FWDepartmentsList">
+							</select>
+						</td>
+						<td class="align_right" >Team:</td>
+						<td class="align_left" >
+							<select name="FWTeamID"  class = style1 <FIELD="FWNoncompanyfunMode">>
+								<option value="0" selected>
+								<FIELD="FWTeamsList">
+							</select>
+						</td>
+					<tr>
+						<td class="align_right"  >*Email:</td>
+						<td class="align_left" >
+							<input type="text"  class = style1 name="FWEmail_Txt" size="30" maxlength="50" value="<FIELD="FWEmail">" <FIELD="FWNoncompanyfunMode">>
+						</td>						
+						<td class="align_right"  >Payroll Dept:</td>
+						<td class="align_left"  colspan="5">
+							<select name="FWPayRollDeptID"  class = style1 <FIELD="FWNoncompanyfunMode">>
+								<FIELD="FWPayRollDeptList">
+							</select>
+						</td>						
+					</tr>					
+					<tr>
+						<td class="align_right"  >Address:</td>
+						<td class="align_left" >
+							<input type="text"  class = style1 name="FWAddress_1" size="30" maxlength="50" value="<FIELD="FWAddress_1">">
+						</td>					
+						<td class="align_right" >Address:</td>
+						<td class="align_left_colspan">
+							<input type="text" class = style1  name="FWAddress_2" size="30" maxlength="50" value="<FIELD="FWAddress_2">">
+						</td>
+					</tr>
+					<tr>
+						<td class="align_right" >City:</td>
+						<td class="align_left" >
+							<input type="text"  class = style1 name="FWCity" size="30" maxlength="50" value="<FIELD="FWCity">">
+						</td>
+						<td class="align_right" >State:</td>
+						<td class="align_left">
+							<input type="text"  class = style1 name="FWState" size="5" maxlength="2" value="<FIELD="FWState">">
+						</td>
+						<td class="align_right"  >Zip:</td>
+						<td class="align_left">
+							<input type="text"  class = style1 name="FWZip" size="10" maxlength="9" value="<FIELD="FWZip">">
+						</td>
+					</tr>
+					<tr>
+						<td class="align_right" >Home Phone:</td>
+						<td class="align_left" >
+							<input type="text"  class = style1 onKeyUp="return autoTab(this, 3, event);" name="FWHomePhoneAreaCode" size="3" maxlength="3" value="<FIELD="FWHomePhoneAreaCode">">&nbsp;
+							<input type="text"  class = style1 onKeyUp="return autoTab(this, 3, event);" name="FWHomePhonePrefix" size="3" maxlength="3" value="<FIELD="FWHomePhonePrefix">">&nbsp;
+							<input type="text"  class = style1 name="FWHomePhonePostfix" size="4" maxlength="4" value="<FIELD="FWHomePhonePostfix">">
+						</td>
+						<td class="align_right" >*Job Title:</td>
+						<td class="align_left">
+							<select name="FWJobTitleID"  class = style1 <FIELD="FWJobAccountAvailHrs">>
+								<FIELD="FWJobTitleList">
+							</select>
+						</td>
+						<td class="align_right" >Career Level:</td>	<!--Job Level renamed as Career Level  -->
+						<td class="align_left">
+							<select name="FWJobLevelID"  class = style1 <FIELD="FWJobAccountAvailHrs">>
+								<FIELD="FWJobLevelList">
+							</select>
+						</td>						
+					</tr>
+					<tr>
+						<td class="align_right">Work Phone:</td>
+						<td class="align_left" >
+							<input type="text"  class = style1 onKeyUp="return autoTab(this, 3, event);" name="FWWorkPhoneAreaCode" size="3" maxlength="3" value="<FIELD="FWWorkPhoneAreaCode">">&nbsp;
+							<input type="text"  class = style1 onKeyUp="return autoTab(this, 3, event);" name="FWWorkPhonePrefix" size="3" maxlength="3" value="<FIELD="FWWorkPhonePrefix">">&nbsp;
+							<input type="text"  class = style1 onKeyUp="return autoTab(this, 4, event);" name="FWWorkPhonePostfix" size="4" maxlength="4" value="<FIELD="FWWorkPhonePostfix">">ext.
+							<input type="text"  class = style1 name="FWExtention" size="5" maxlength="5" value="<FIELD="FWExtention">">
+						</td>
+						<td class="align_right" >*Account:</td>
+						<td class="align_left_colspan">
+							<select name="FWAccountID"  class = style1 <FIELD="FWJobAccountAvailHrs">>
+								<FIELD="FWAccountList">
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<td class="align_right">Fax:</td>
+						<td class="align_left" >
+							<input type="text"  class = style1 onKeyUp="return autoTab(this, 3, event); "name="FWFaxAreaCode" size="3" maxlength="3" value="<FIELD="FWFaxAreaCode">">&nbsp;
+							<input type="text"  class = style1 onKeyUp="return autoTab(this, 3, event); "name="FWFaxPrefix" size="3" maxlength="3" value="<FIELD="FWFaxPrefix">">&nbsp;
+							<input type="text"  class = style1 name="FWFaxPostfix" size="4" maxlength="4" value="<FIELD="FWFaxPostfix">">
+						</td>
+						<td class="align_right" >Avail Billable Hrs:</td>
+						<td class="align_left_colspan">
+							<input type="text" class="style1"  size = 5 name="FWAvailBillHours" maxlength="5" onkeyup="loadAvailBillHrs(2);" value="<FIELD="FWAvailBillHours">" <FIELD="FWJobAccountAvailHrs">>
+							isSpecial Employee:<input type="checkbox" name="FWisSpecialEmployee" onclick="enableDisableAvailBillHrs();" <FIELD="FWisSpecialEmployeeCheck"> <FIELD="FWNoncompanyfunMode">>
+							<FIELD="FWShowEffectiveFromStart">
+							Effective From:<input type="text" name="FWEffectiveFrom" id="FWEFDate" datepicker="true" size="10" maxlength="8" onkeypress="return keypresseventdateonly(event);" value="<FIELD="FWEffectiveFrom">" <FIELD="FWNoncompanyfunMode">>
+							<FIELD="FWShowEffectiveFromEnd">
+						</td>
+					</tr>
+					<tr>
+						<td class="align_right">Cell:</td>
+						<td class="align_left" >
+							<input type="text"  class = style1 onKeyUp="return autoTab(this, 3, event);" name="FWCellAreaCode" size="3" maxlength="3" value="<FIELD="FWCellAreaCode">">-
+							<input type="text"  class = style1 onKeyUp="return autoTab(this, 3, event);" name="FWCellPrefix" size="3" maxlength="3" value="<FIELD="FWCellPrefix">">-
+							<input type="text"  class = style1 name="FWCellPostfix" size="4" maxlength="4" value="<FIELD="FWCellPostfix">">
+						</td>
+						<td class="align_right" >*Competency Center:</td>
+						<td class="align_left">
+							<select name="FWCompetencyCenterId"  class = style1 onchange="loadSubCompList();" <FIELD="FWCompCenterStatus">>
+								<FIELD="FWCompCenterList">
+							</select>
+						</td>
+						<td class="align_right" >*Sub Competency:</td>
+						<td class="align_left">
+							<select name="FWSubCompetencyCenterId"  class = style1 <FIELD="FWSubCompCenterStatus"> <FIELD="FWNoncompanyfunMode">></select>
+						</td>						
+					</tr>
+					<tr>
+						<td class="align_right">Pager:</td>
+						<td class="align_left" >
+							<input type="text"  class = style1 onKeyUp="return autoTab(this, 3, event);" name="FWPagerAreaCode" size="3" maxlength="3" value="<FIELD="FWPagerAreaCode">">-
+							<input type="text"  class = style1 onKeyUp="return autoTab(this, 3, event);" name="FWPagerPrefix" size="3" maxlength="3" value="<FIELD="FWPagerPrefix">">-
+							<input type="text"  class = style1 name="FWPagerPostfix" size="4" maxlength="4" value="<FIELD="FWPagerPostfix">">
+						</td>
+						<td class="align_right" >*Chargeability Target %:</td>
+						<td class="align_left">
+							<input type="text" name="FWChargeabilityPercent" size="5" maxlength="5" class = style1 <FIELD="FWNoncompanyfunMode"> value="<FIELD="FWChargeabilityPercent">"/>
+						</td>	
+						<td></td><td></td>	
+										
+					</tr>
+					<!--
+					<tr>
+						<td class="align_right">*Period:</td>
+						<td class="align_left">
+							<select name="FWSalaryPeriodID">
+								<FIELD="FWSalaryPeriodsList">
+							</select>
+						</td>
+						<td class="align_right">*Salary:</td>
+						<td class="align_left" colspan="2">
+							<input type="text" name="FWSalaryAmount" size="15" maxlength="15" value="<FIELD="FWSalaryAmount">">
+						</td>
+						<td class="align_right">*Burden:</td>
+						<td class="align_left">
+							<input type="text" name="FWBurdenFactor" size="5" maxlength="5" value="<FIELD="FWBurdenFactor">">
+						</td>
+					</tr>
+					-->
+					
+					
+				</table>
+				<table class=" subheader table_cellpad2 table_width100">
+				<FIELD="FWShowEmployeeDataStart">
+				<tr>				
+						<td class="align_right"  >*Hire Date:</td>
+						<td class="align_left">
+							<input type="text" class = style1  name="FWHireDate" id="FWHDate" datepicker="true" size="10" maxlength="8" onkeypress="return keypresseventdateonly(event);" onkeyup="LoadServiceDate(this);" onfocus="LoadServiceDate(this);" onblur="LoadServiceDate(this);" value="<FIELD="FWHireDate">">
+						</td>						
+				</tr>
+				<tr>
+						<td class="align_right"  >*Service Date:</td>
+						<td class="align_left">
+							<input type="text" class = style1  name="FWServiceDate" id="FWSerDate" datepicker="true" size="10" maxlength="8" onkeypress="return keypresseventdateonly(event);"  value="<FIELD="FWServiceDate">">
+						</td>						
+				</tr>
+				<tr>
+				<td></td>
+				<td></td>				
+				<td>		 
+						<table id="reHireInfoTbl" class="subheader table_cellpad2 table_width100">
+						<tr>
+							<td class="align_right">
+								<input type="checkbox" name="FWIsRehire" <FIELD="FWIsRehire">  Onclick = "copyTermDate()">						
+				 			</td>
+				 			<td class="align_left">isRehire</td>
+				 			<td>
+					 			<table id="reHireDateInfoTbl" class=" subheader table_cellpad2 table_width100">
+					 			<tr>
+									<td class="align_right">Rehire Date:</td>
+									<td class="align_left" >
+										<input type="text" class = style1  name="FWRehireDate" id="FWRHDate" datepicker="true" size="10" maxlength="8" onkeypress="return keypresseventdateonly(event);" value="<FIELD="FWRehireDate">">
+									</td>
+									<td class="align_right">Old Term. Date:</td>
+									<td class="align_left" >
+										<input type="text" class = style1 name="FWOldTermDate_RH" id="FWOTDate_RH" datepicker="true" size="10" maxlength="8" value="<FIELD="FWOldTermDate">">
+									</td>
+								</tr>									
+								</table>
+							</td>
+							<td></td>
+						</tr>
+						</table>
+				</td>													
+				</tr>
+				<FIELD="FWShowEmployeeDataEnd">
+				</table>
+				<table id="ConToDirectTbl"class = "style2 align_right table_width72 table_cellpad2">
+						<tr>
+						<FIELD="FWShowEmployeeDataStart">
+							<td class="align_right">
+								<input type="checkbox" name="FWIsConDirect" <FIELD="FWIsConDirect"> Onclick = "copyTermDateConDirect()">						
+				 			</td>
+				 			<td class="align_left">Is Contract to Direct</td>
+				 			<td>
+					 			<table id="ConDateInfoTbl" class=" subheader table_cellpad2 table_width100">
+					 			<tr>
+									<td class="align_right">Direct Hire Date:</td>
+									<td class="align_left" >
+										<input type="text" class = style1 name="FWConDirectHireDate" id="FWConDirectHireDate" datepicker="true" size="10" maxlength="8" value="<FIELD="FWConDirectHireDate">">
+									</td>
+									<td class="align_right">Old Term. Date:</td>
+									<td class="align_left" >
+										<input type="text" class = style1 name="FWOldTermDate_CD" id="FWOTDate_CD" datepicker="true" size="10" maxlength="8" value="<FIELD="FWOldTermDate">">
+									</td>
+								</tr>									
+								</table>
+							</td>
+								<FIELD="FWShowEmployeeDataEnd">							
+						</tr>
+				</table>					
+				<br><br>					
+				<table class="align_left table_width62 style2 table_cellpad2">
+				<tr>
+						<td class="align_right">Term. Date:</td>
+						<td class="align_left" >
+							<input type="text" class = style1  name="FWTermDate" id="FWTDate" datepicker="true" size="10" maxlength="8" onkeypress="return keypresseventdateonly(event);" value="<FIELD="FWTermDate">" <FIELD="FWNoncompanyfunMode">>
+						</td>
+						<td class="align_right" >Term Classification:</td>
+						<td class="align_left">
+							<select name="FWTermClassification"  class = style1 <FIELD="FWNoncompanyfunMode">>
+								<FIELD="FWTermClassificationList">
+							</select>
+						</td>	
+						<td></td>			
+				</tr>
+				</table>	
+				<br><br>														
+				<hr>
+				<table class ="style1 table_cellpad2 table_width100">
+					<tr>
+						<td class="align_center">
+							*<FIELD="FW_LEADENGINEER_GROUPLABEL"> :
+							<select name="FWLeadEngineer" class = style2 <FIELD="FWNoncompanyfunMode">> 
+								<option value="0">None</option>
+								<FIELD="FWLeadEngineerList"> 
+							</select>
+						</td>
+						<td class="align_center">
+							*<FIELD="FW_ENGMANAGER_GROUPLABEL"> :
+							<select name="FWEngineeringManager" class = style2 <FIELD="FWNoncompanyfunMode">> 
+								<option value="0">None</option>
+								<FIELD="FWEngineeringManagerList"> 
+							</select>
+						</td>
+						<td class="align_center">
+							*<FIELD="FW_PEOPLEMANAGER_GROUPLABEL"> :
+							<select name="FWPeopleManagerList" class = style2 <FIELD="FWNoncompanyfunMode">> 
+								<option value="0">None</option>
+									<FIELD="FWPeopleManagerListValue"> 
+							</select>
+						</td>
+
+							<td class="align_center">
+							*<FIELD="FW_TOPLINEMANAGER_GROUPLABEL"> :
+							<select name="FWTopLineManagerIdList" class = style2 <FIELD="FWNoncompanyfunMode">> 
+								<option value="0">None</option>
+									<FIELD="FWTopLineManagerListValue"> 
+							</select>
+							
+						</td>
+					</tr>
+				</table>
+				
+				
+			
+				<hr>
+				<FIELD="FWShowEmployeeDataStart">
+				
+				<div class="subheader align_left"><b>Company Functions</b></div>
+				<br>
+				<table class = "style1 table_wid80_hei26" >
+				<tr>
+						<td class="td_left_20w"  ><FIELD="FW_JRPARTNER_GROUPLABEL">:</td>
+						<td class="td_width10_aligl" >
+							<input type="checkbox"   name="FWisJrPartner" <FIELD="FWisJpr"> onclick = "jpAutoAllocation();">
+						</td>
+						
+						<td class="td_right_30w" >Automated Time Allocation:</td>
+						<td class="td_width10_aligl" >
+							<input type="checkbox" name="FWisAutoAllocation" <FIELD="FWisAutoAllocation1"> onclick = "jpAutoAllocation();" >
+						</td>
+						<td class="td_left_20w"  >Allocated Hours</td>
+						<td class="td_width10_aligl">
+							<input type="text" class="style1"   size = 5 name="FWJpAllocatedHours" maxlength="5" onblur="return JpAllocatedHoursfun(this);" onkeypress="return keypresseventnoonly(event);"  value = <FIELD="FWJpAllocatedHours"> >
+						</td>					
+				</tr>	
+				</table>
+			
+				<br>
+				
+				<table class ="style1 table_wid80_hei26" >
+				<tr>
+
+						<td class="td_left_20w"  ><FIELD="FW_SRSALESENGINEER_GROUPLABEL">:</td>
+						<td class="td_width10_aligl">
+							<input type="checkbox" name="FWisSrSalesEngineer" <FIELD="FWisSSE"> onclick = "SSEAutoAllocation();">
+						</td>
+						
+						<td class=" td_right_30w">Automated Time Allocation:</td>
+						<td class="td_width10_aligl">
+							<input type="checkbox" name="FWisSSEAutoAllocation" <FIELD="FWisSSEAutoAllocation1"> onclick = "SSEAutoAllocation();" >
+						</td>
+						<td class="td_left_20w">Allocated Hours</td>
+						<td class="td_width10_aligl">
+							<input type="text" class="style1"  size = 5 name="FWSSEAllocatedHours" maxlength="5" onblur="return SSEAllocatedHoursfun(this);" onkeypress="return keypresseventnoonly(event);"  value = <FIELD="FWSSEAllocatedHours"> >
+						</td>
+				</tr>	
+				</table>
+
+				<table class="style table_width100">
+					
+					<tr>
+						<td class="td_left_20w">* <FIELD="FW_ACCOUNTEXEC_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisAccountManager" <FIELD="FWisAM">>
+						</td>
+						<td class="td_left_20w"><FIELD="FW_ANALYSISVERTICALEAST_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisDesignAndAnalysCompEast" <FIELD="FWisCOMPEAST">>
+						</td>
+						<td class="td_left_20w"><FIELD="FW_ELECTRICALVERTICAL_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWElecVertical" <FIELD="FWisElv">>
+						</td>
+						
+					</tr>
+				
+					<tr>
+						<td class="td_left_20w">* <FIELD="FW_PROJECTLEADER_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisProjectLeader" <FIELD="FWisPL">>
+						</td>						
+						<td class="td_left_20w"><FIELD="FW_ANALYSISVERTICAL_GROUPLABEL">:</td>
+						<td class=" align_left td_width5" >
+							<input type="checkbox" name="FWAnalysisVertical" <FIELD="FWisAnv">>
+						</td>
+						
+						<td class="td_left_20w"><FIELD="FW_ELECTRICALSYSTEMINTEGRATION_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisElectricalSystemsIntegration" <FIELD="FWisElectricalSysIntMGR">>
+						</td>									
+				 		
+					</tr>
+					<tr>
+						<td class="td_left_20w"><FIELD="FW_VERTICAL_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisVertical" <FIELD="FWisVer">>
+						</td>											
+					
+						<td class="td_left_20w"><FIELD="FW_CHECKERS_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisChecker" <FIELD="FWisChk">>
+						</td>
+				 		<td class="td_left_20w"><FIELD="FW_POWERSYSTEM_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisPowerSystem" <FIELD="FWisPSystem">>
+						</td>
+					
+					</tr>
+					<tr>		 
+						<td class="td_left_20w"><FIELD="FW_LEADENGINEER_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisLeadEng" <FIELD="FWisLEng">>
+						</td>	
+								
+						<td class="td_left_20w"><FIELD="FW_TOPLINEMANAGER_GROUPLABEL"></td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisTopLineManager" <FIELD="FWisTLManager">>
+						</td>
+						<td class="td_left_20w"><FIELD="FW_MANUFACTURINGVERTICAL_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWManFactVertical" <FIELD="FWisMfv">>
+						</td>
+					</tr>
+					
+					<tr>	
+						<td class="td_left_20w"><FIELD="FW_ENGMANAGER_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisEngManager" <FIELD="FWisEMgr">>
+						</td>					
+						<td class="td_left_20w"><FIELD="FW_OFFSHOREMANAGER_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisOffshoreManager" <FIELD="FWisOffshoreMgr">>
+						</td>
+						<td class="td_left_20w"><FIELD="FW_ENGADMIN_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisEngAdmin" <FIELD="FWisEAdmn">>
+						</td>
+					</tr>
+					
+					<tr>
+						<FIELD="FWShowAdminGroupStart">
+							<td class="td_left_20w"><FIELD="FW_ADMIN_GROUPLABEL">:</td>
+							<td class=" align_left td_width5">
+								<input type="checkbox" name="FWisAdminGroup" <FIELD="FWisAdminGP">>
+							</td>
+						<FIELD="FWShowAdminGroupEnd"><FIELD="FWShowEmployeeDataStart">						
+					
+						<td class="td_left_20w"><FIELD="FW_DIRECTREP_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+						<input type="checkbox" name="FWisDirectRep" <FIELD="FWisDR">>
+						</td>
+						<td class="td_left_20w"><FIELD="FW_RESOURCEMANAGER_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisResourceManager" <FIELD="FWisRManager">>
+						</td>
+					
+					</tr>
+					<tr>
+						<FIELD="FWShowPeopleManagerStart">
+						<td class="td_left_20w"><FIELD="FW_PEOPLEMANAGER_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisPeopleManager" <FIELD="FWisPManager">>
+						</td>
+						<FIELD="FWShowPeopleManagerEnd">															
+					</tr>
+					<tr style = "visibility:hidden;">
+						<td class="td_left_20w"><FIELD="FW_ANALYSISVERTICALWEST_GROUPLABEL">:</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" name="FWisDesignAndAnalysCompWest" <FIELD="FWisCOMPWEST">>
+						</td>
+						<td class="td_left_20w"><FIELD="FW_SALESENGINEER_GROUPLABEL"> :</td>
+						<td class=" align_left td_width5">
+							<input type="checkbox" readonly = "true" name="FWisSalesEngineer" <FIELD="FWisSE">>
+						</td>	
+					</tr>
+				</table>
+				 <hr>
+				<div class="subheader align_left"><b>Time Off Allotment</b>(per year)</div>
+				<br>
+				<table class="style2 table_width100">
+				<tr>
+					<td class="align_right">Vacation:</td>
+					<td><input type="text" class="style1" size =6 name="FWVacationHours" maxlength="6" value="<FIELD="FWVacationHours">"></td>
+					<td class="align_right">PBA:</td>
+					<td><input type="text" class="style1" size =6 name="FWPBAHours" maxlength="6" value="<FIELD="FWPBAHours">"></td>
+					<td class="align_right">Comp Time:</td>
+					<td><input type="text" class="style1" size =6 name="FWCompTimeHours" maxlength="6" value="<FIELD="FWCompTimeHours">"></td>
+					<td class="align_right">Holiday-Floating:</td>
+					<td><input type="text" class="style1" size =6 name="FWHolidayFloatingTimeHours" maxlength="6" value="<FIELD="FWHolidayFloatingTimeHours">"></td>
+				</tr>
+				</table>				
+			</center>
+			<FIELD="FWShowEmployeeDataEnd">
+			<br>
+			<center>
+			<FIELD="FWEmployeeViewStart">
+				<input type="button" class = style1  value="Submit" id=submit1 name="submit1" onClick="addEmployee();">
+			<FIELD="FWEmployeeViewEnd">
+			
+				<input type="button" class = style1  value="Cancel" onClick="document.location.replace('ProxyServlet?FWModule=admin_employee&FWRetry=true');">
+				<input type="button" class = style1  value="Reset" onclick="resetForm();">
+			</center>
+		</form>
+	</body>
+</html>
+<FIELD="FWShowEmployeeDataStart">
+<script>
+
+if(document.employeeform.FWisJrPartner.checked)
+	{
+		//alert('hai this iscame false ');
+		document.employeeform.FWisAutoAllocation.disabled = false;
+		
+		if(document.employeeform.FWisAutoAllocation.checked)
+		{
+			document.employeeform.FWJpAllocatedHours.disabled = false;
+		}
+		else
+		{
+		document.employeeform.FWJpAllocatedHours.disabled = true;
+		}
+		
+	}
+	else
+	{
+	document.employeeform.FWisAutoAllocation.disabled = true;
+		document.employeeform.FWJpAllocatedHours.disabled = true;
+		document.employeeform.FWisAutoAllocation.checked = false;
+		document.employeeform.FWJpAllocatedHours.value = "";
+	//alert(document.employeeform.FWisJrPartner.checked);
+	}	
+	
+	
+	
+	if(document.employeeform.FWisSrSalesEngineer.checked)
+	{
+		//alert('hai this iscame false ');
+		document.employeeform.FWisSSEAutoAllocation.disabled = false;
+		
+		if(document.employeeform.FWisSSEAutoAllocation.checked)
+		{
+			document.employeeform.FWSSEAllocatedHours.disabled = false;
+		}
+		else
+		{
+		document.employeeform.FWSSEAllocatedHours.disabled = true;
+		}
+		
+	}
+	else
+	{
+	document.employeeform.FWisSSEAutoAllocation.disabled = true;
+		document.employeeform.FWSSEAllocatedHours.disabled = true;
+		document.employeeform.FWisSSEAutoAllocation.checked = false;
+		document.employeeform.FWSSEAllocatedHours.value = "";
+	//alert(document.employeeform.FWisSSEngineeer.checked);
+	}	
+
+try{
+
+if(document.employeeform.FWEmail.value != '')
+{	
+	
+	if(document.employeeform.FWisProjectLeader.checked)
+	{
+		ispl = 1;
+	}
+	else
+	{
+		ispl = 0;
+	}
+	if(document.employeeform.FWisSrSalesEngineer.checked)
+	{
+		issse = 1;
+	}
+	else
+	{
+		issse = 0;
+	}
+	if(document.employeeform.FWisSalesEngineer.checked)
+	{
+		isse = 1;
+	}
+	else
+	{
+		isse = 0;
+	}
+	if(document.employeeform.FWisAccountManager.checked)
+	{
+		isam = 1;
+	}
+	else
+	{
+		isam = 0;
+	}
+	if(document.employeeform.FWisVertical.checked)
+	{
+		isvert = 1;
+	}
+	else
+	{
+		isvert = 0;
+	}
+	if(document.employeeform.FWAnalysisVertical.checked)
+	{
+		isAvert = 1;
+	}
+	else
+	{
+		isAvert = 0;
+	}
+	if(document.employeeform.FWElecVertical.checked)
+	{
+		isEvert = 1;
+	}
+	else
+	{
+		isEvert = 0;
+	}
+	if(document.employeeform.FWManFactVertical.checked)
+	{
+		isMvert = 1;
+	}
+	else
+	{
+		isMvert = 0;
+	}
+	if(document.employeeform.FWisDirectRep.checked)
+	{
+		isDrep = 1;
+	}
+	else
+	{
+		isDrep = 0;
+	}
+	if(document.employeeform.FWisAutoAllocation.checked)
+	{
+		isAutoJp = 1;
+	}
+	else
+	{
+		isAutoJp = 0;
+	}
+	if(document.employeeform.FWisSSEAutoAllocation.checked)
+	{
+		isAutoSse = 1;
+	}
+	else
+	{
+		isAutoSse = 0;
+	}
+	
+	if(document.employeeform.FWisChecker.checked)
+	{
+		ischkr = 1;
+	}
+	else
+	{
+		ischkr = 0;
+	}
+	if(document.employeeform.FWisEngAdmin.checked)
+	{
+		isEAdmn = 1;
+	}
+	else
+	{
+		isEAdmn = 0;
+	}
+
+	if(document.employeeform.FWisJrPartner.checked)
+	{
+		isJrp = 1;
+	}
+	else
+	{
+		isJrp = 0;
+	}
+	if(document.employeeform.FWisPeopleManager.checked)
+	{
+		isPManager = 1;
+	}
+	else
+	{
+		isPManager = 0;
+	}
+	
+	if(document.employeeform.FWisOffshoreManager.checked)
+	{
+		isOffShoreManager = 1;
+	}
+	else
+	{
+		isOffShoreManager = 0;
+	}
+
+	if(document.employeeform.FWisElectricalSystemsIntegration.checked)
+	{
+		isElectricalSysIntegration = 1;
+	}
+	else
+	{
+		isElectricalSysIntegration = 0;
+	}
+
+
+}
+else
+{
+	newScreen = 1;
+}
+}
+catch(err)
+{
+}
+	
+</script>
+<FIELD="FWShowEmployeeDataEnd">
