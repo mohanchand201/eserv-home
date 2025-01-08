@@ -1,0 +1,2806 @@
+<html>
+<head>
+	<title>eServ, LLC - Time Logging</title>
+	<link href="/assets/css/styles.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="/assets/js/SessionTimeOut.js"></script>
+	<!-- Time Out Continue feature Start -->
+	<script>
+		var alerttimelimit = timeoutAlertDuration();
+            setTimeout('sessionWarning()',alerttimelimit);
+            function sessionWarning() {
+                var sFeatures="dialogHeight: " + 150 + "px; scroll=No";
+                   var myObject = new Object();
+                   myObject.CurrentsessionID = '<FIELD="FWSession">';
+                var retValue = window.showModalDialog("/jsp/RestoreSession.jsp",myObject,sFeatures);
+                if(retValue == 'tmedout'){
+                    window.location = "/servlets/ProxyServlet";
+                 }
+                setTimeout('sessionWarning()', alerttimelimit);
+            }
+	</script>
+	<!-- Time Out Continue feature End -->
+
+
+
+	<script type="text/javascript" src="/assets/js/StringUtils.js"></script>
+	<script>
+		var isN4, isIE;
+        if ( parseInt(navigator.appVersion.charAt(0)) >= 4) {
+            isN4 = (navigator.appName == "Netscape") ? true : false;
+            isIE = (navigator.appName.indexOf("Microsoft") != -1) ? true : false;
+        }
+
+        var chargeNumDataArray = <FIELD="FWChargeNumDataArray">;
+        var projectDataArray = <FIELD="FWProjectDataBuffer">;
+        var AllprojectDataArray = <FIELD="FWAllProjectDataBuffer">;
+        var nonBillable = <FIELD="FWNonBillableProjects">;
+        //var hoursEstimatedDataArray = <FIELD="FWHoursEstimatedDataArray">;
+        //var hoursUsedDataArray = <FIELD="FWHoursUsedDataArray">;
+        var hoursPerdate= <FIELD="FWHoursPerDate">;
+        var update= <FIELD="FWMode">;
+        var updatingHours = 0;
+        var Editeddday ;
+        var statusid = <FIELD="FWStatusID">;
+        var isBilled = <FIELD="FWBilledEditMode">;
+        var weekArray = <FIELD="FWWeekArray">;
+        var weekFirstValue =weekArray[0];
+        if(weekFirstValue == "30,12,23")
+        {
+        	update= 1;
+        }
+        else
+        {
+        	update= 1;
+        }
+         var oldActivityIndex;
+
+          var oldActivity;
+
+        //var EstimatedHours = <FIELD="FWHoursEstimated">0;
+        //<FIELD="FWProjectActivityCodeDataArray">
+
+        var admin = "<FIELD="FWisAdmin">";
+
+		console.log("Here");
+        var entryId = "<FIELD="FWEntryID">"+0;
+
+        if(update==0)
+        {
+            entryId=0;
+        }
+        /*
+        function checkHyperLinkExist(txt)
+        {
+            var linkExist = false;
+            var lessThanIndex = txt.indexOf('<a');
+            var greaterThanIndex = txt.lastIndexOf('>');
+            if(lessThanIndex!=-1 && greaterThanIndex!=-1){
+                var t = txt.substr(	lessThanIndex,greaterThanIndex-1);
+                var hrefIndex = t.indexOf('href');
+                if(hrefIndex!=-1){
+                    var t1=txt.substr(hrefIndex,greaterThanIndex-1);
+                    if(t1.indexOf('=')!=-1){
+                        linkExist = true;
+                      }
+                }
+            }
+            return linkExist;
+        }
+        */
+        var isContractor = '<FIELD="FWisContractUser">';
+
+
+        var xmlHttp;
+        function createXmlHttpRequest()
+        {
+            if(window.ActiveXObject)
+            {
+             xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
+            }
+            else if(window.XMLHttpRequest)
+            {
+                xmlHttp = new XMLHttpRequest();
+            }
+        }
+
+        function startRequest(value) {
+        	console.log("Inside startRequest");
+        	var isSigCheked ='';
+        	try {
+         		isSigCheked = document.entryform.FWisSignificantEvent.checked;
+         	}
+         	catch(err) {}
+
+        	if (isSigCheked) {}
+			else {
+				try {
+					console.log("Inside try block");
+					createXmlHttpRequest();
+					var wedate = "<FIELD="FWPeriodInclDisplay">";
+					var FWTSession = "<FIELD="FWSession">";
+					if (isContractor == 'c') {
+						xmlHttp.open("GET","/servlets/checkAvail?projectId="+value+"&FWEmpId=<FIELD="FWEmployeeID">&FWClientID=<FIELD="FWClientID">&FWisContractor="+isContractor+"&FWEntryid="+entryId+"&FWWEDate="+wedate+"&FWTSession="+FWTSession,true);
+					}
+					else {
+						xmlHttp.open("GET","/servlets/checkAvail?projectId="+value+"&FWEmpId=<FIELD="FWEmployeeID">&FWClientID=<FIELD="FWClientID">&FWisContractor="+isContractor+"&FWEntryid="+entryId+"&FWWEDate="+wedate+"&FWTSession="+FWTSession,true);
+					}
+					xmlHttp.onreadystatechange = handleStateChange;
+					xmlHttp.send(null);
+				}
+				catch(err){}
+			}
+        }
+
+        function handleStateChange()
+        {
+
+        try{
+            if(xmlHttp.readyState == 1)
+            {
+                //document.getElementById("results").innerHTML = "Loading...";
+                document.getElementById("results1").innerHTML = "Loading...";
+                //document.getElementById("results2").innerHTML = "Loading...";
+            }
+            if(xmlHttp.readyState == 4)
+            {
+                if(xmlHttp.status == 200)
+                {
+
+                                            var a = new Array(2);
+
+                                    a = xmlHttp.responseText.split("#");
+
+
+                                    if(a.length==1){
+                                        var ind = document.entryform.FWProjectID.selectedIndex;
+                                        var pro = document.entryform.FWProjectID.options[ind].text;
+                                        alert('Project '+pro+' is locked to make/update time entry');
+                                        document.entryform.FWProjectID.value = 'xxx';
+                                        document.getElementById("results1").innerHTML = "<select name = 'FWActivityCodeID'> <option ></select>";
+                                        return;
+                                    }
+            //		var message = xmlHttp.responseXML.
+                //					getElementByTagName("valid")[0].
+                    //				childNodes[0].nodeValue;
+
+                                    //alert(xmlHttp.responseText);
+
+                                    document.getElementById("results").innerHTML = a[0];
+
+                                    document.getElementById("results1").innerHTML = a[1];
+
+                                    //document.getElementById("results2").innerHTML = a[2];
+
+                                if(a[1]=='')
+                                {
+                                    document.getElementById("results1").innerHTML = "<select name = 'FWActivityCodeID'> <option ></select>";
+                                }
+                                startRequest_(document.entryform.FWProjectID.value,document.entryform.FWActivityCodeID.value);
+                }
+                else
+                {
+                    alert("error loading pagen"+xmlHttp.status+":"+xmlHttp.statusText);
+                }
+            }
+            }
+            catch(err)
+            {
+            }
+        }
+
+        function startRequest_(value,value1)
+        {
+
+        try{
+            createXmlHttpRequest();
+        if(isContractor == 'c')
+        {
+        xmlHttp.open("GET","/servlets/checkAvail?projectId="+value+"&FWEmpId=c&FWActId="+value1,true);
+        }
+        else
+        {
+            xmlHttp.open("GET","/servlets/checkAvail?projectId="+value+"&FWEmpId=<FIELD="FWEmployeeID">&FWActId="+value1,true);
+            }
+
+            xmlHttp.onreadystatechange = handleStateChange_;
+
+            xmlHttp.send(null);
+            }
+            catch(err)
+            {
+            }
+        }
+        function handleStateChange_()
+        {
+
+        try{
+            if(xmlHttp.readyState == 1)
+            {
+                document.getElementById("results2").innerHTML = "Loading...";
+            }
+            if(xmlHttp.readyState == 4)
+            {
+                if(xmlHttp.status == 200)
+                {
+
+                                    document.getElementById("results2").innerHTML = xmlHttp.responseText;
+                }
+                else
+                {
+                    alert("error loading pagen"+xmlHttp.status+":"+xmlHttp.statusText);
+                }
+            }
+            }
+            catch(err)
+            {
+            }
+        }
+
+        String.prototype.trim = function () {
+            return this.replace(/^\s*/, "").replace(/\s*$/, "");
+        }
+
+        function empty(x) {
+
+        //alert(x.length);
+         x= x.trim();
+
+        if (x.length > 0)
+        return false;
+        else if (x == '\n' )
+            return false;
+        else
+        return true;
+
+        }
+
+
+        function stripSpaces(x)
+
+        {
+
+        var y=document.entryform.FWDescription.value;
+        x= x.replace(/\r/g, " ");
+
+
+        //There are regex switchs for printing /nonprinting characters
+
+
+        //but they stripped some characters either needed or left some not wanted,
+
+
+        //thats why the following replacement exists.
+
+
+        x = x.replace(/[^ A-Za-z0-9-']/g, "");
+
+
+
+
+
+
+        // x = x.replace(/'/g, "");
+
+
+
+
+        x = x.replace(/ +/g, " ");
+
+
+        x = x.replace(/^\s/g, "");
+
+        x = x.replace(/\s$/g, "");
+
+
+        //document.entryform.FWDescription.value = x;
+
+
+        while (x.substring(0,1) == ' ')
+
+        x = x.substring(1);
+
+        return y;
+
+
+        }
+
+
+        function loadEstimated(v)
+        {
+
+                var projectId = document.entryform.FWProjectID.value;
+
+                 startRequest_(projectId,v);
+        }
+
+
+        function changeChargeNum (n)
+        {
+          var significant;
+          var offset;
+
+          if ( document.entryform.FWCurrentPage.value == 1 ) {
+                if( document.entryform.FWisSignificantEvent != undefined ) {
+                    significant = document.entryform.FWisSignificantEvent.checked;
+                } else {
+                    significant = false;
+                }
+                offset = 1;
+          }
+
+          if ( document.entryform.FWCurrentPage.value == 2 ) {
+              significant = false;
+              offset = 0;
+          }
+
+          if ( document.entryform.FWCurrentPage.value == 3 ) {
+              significant = true;
+              offset = 0;
+          }
+
+          if ( document.entryform.FWCurrentPage.value != 3 ) {
+            var projectValue = document.entryform.FWProjectID.options[n].value;
+
+                if ( projectValue != 'xxx' ) {
+                    if ( !significant ) {
+                  clearChargeNums();
+
+                var chargeNumData = chargeNumDataArray[n - offset][1];
+
+                if ( chargeNumData.length > 0 ) {
+                  for ( i = 0; i < chargeNumData.length; i++ ) {
+                    var chargeNumName = chargeNumData[i];
+
+                    document.entryform.FWChargeNum.options[i] =
+                        new Option(chargeNumName, chargeNumName);
+
+                  }
+                } else {
+                   document.entryform.FWChargeNum.options[0] = new Option('N/A', 'N/A'); //SK
+                   console.log("Set to N/A");
+                }
+
+                document.entryform.FWChargeNum.options[0].selected = true;
+
+                } else {
+                    setSignificant(true);
+                }
+
+            } else {
+                clearChargeNums();
+            }
+          }
+
+
+        }
+
+
+        function changeHoursUsed(a)
+        {
+          var significant;
+          var n = document.entryform.FWProjectID.selectedIndex;
+
+          if ( document.entryform.FWCurrentPage.value == 1 ) {
+                if( document.entryform.FWisSignificantEvent != undefined ) {
+                    significant = document.entryform.FWisSignificantEvent.checked;
+                } else {
+                    significant = false;
+                }
+          }
+
+          if ( document.entryform.FWCurrentPage.value == 2 ) {
+              significant = false;
+          }
+
+          if ( document.entryform.FWCurrentPage.value == 3 ) {
+              significant = true;
+          }
+
+          if ( document.entryform.FWCurrentPage.value != 3 ) {
+            var projectValue = document.entryform.FWProjectID.options[n].value;
+
+                if ( projectValue != 'xxx' )
+                {
+                    if ( !significant )
+                    {
+
+                        var hoursUsedData = hoursUsedDataArray[n - 1][a][1];
+
+                        if (!isNaN(hoursUsedData))
+                        {
+
+                            if ( hoursUsedData.length > 0 )
+                            {
+                                   document.entryform.FWHoursUsed.value = hoursUsedData[0];
+                            }
+
+                        }
+                        else
+                        {
+
+                            document.entryform.FWHoursUsed.value = '';
+
+                        }
+
+                    }
+
+                }
+                else
+                {
+                        document.entryform.FWHoursUsed.value = '';
+                }
+
+            }
+            else
+            {
+                    document.entryform.FWHoursUsed.value = '';
+            }
+
+          }
+
+            function clearHoursUsed()
+            {
+
+                document.entryform.FWHoursUsed.value = '';
+
+            }
+
+
+
+            function clearHoursEstimated()
+            {
+                try{
+                document.entryform.FWHoursEstimated.value = 'Do Enter';
+
+                }
+                catch(err)
+                {
+                }
+                //changeAct();
+
+
+        if(document.entryform.FWProjectID.selectedIndex == 0 && document.entryform.FWCurrentPage.value == 1)
+        {
+        try{
+        document.getElementById('results2').style.visibility= "hidden";
+        }
+        catch(err)
+        {
+        }
+        }
+        else
+        {
+        try{
+        if(document.entryform.FWisSignificantEvent.checked)
+        {
+
+        document.getElementById('results2').style.visibility= "hidden";
+        }
+        else
+        {
+            document.getElementById('results2').style.visibility= "visible";
+
+        }
+
+        }
+        catch(err)
+        {
+        }
+        }
+            }
+
+        function changeHoursEstimated(a)
+        {
+
+            if ( document.entryform.FWCurrentPage.value == 3 ){
+                  significant = true;
+                  return true;
+            }
+            if (1){
+
+          var significant;
+          var n = document.entryform.FWProjectID.selectedIndex;
+          // alert(n + 'Test1');
+
+          if ( document.entryform.FWCurrentPage.value == 1 ) {
+                if( document.entryform.FWisSignificantEvent != undefined ) {
+                    significant = document.entryform.FWisSignificantEvent.checked;
+                } else {
+                    significant = false;
+                }
+          }
+
+          if (document.entryform.FWCurrentPage.value == 2 ) {
+              significant = false;
+          }
+
+          if ( document.entryform.FWCurrentPage.value == 3 ) {
+              significant = true;
+          }
+
+          if ( document.entryform.FWCurrentPage.value != 3 ) {
+            var projectValue = document.entryform.FWProjectID.options[n].value;
+                if ( projectValue != 'xxx' )
+                {
+                    if ( !significant )
+                    {
+                          var hoursEstimatedData = '';
+                          if (hoursEstimatedDataArray == ''){}
+                        else
+                        {
+                          if ( document.entryform.FWCurrentPage.value == 2 )
+                          {
+                              n=n+1;
+                              a=a+1;
+                          }
+                            hoursEstimatedData = hoursEstimatedDataArray[n -1][a][1];
+                        }
+                        if (!isNaN(hoursEstimatedData))
+                        {
+                            if ( hoursEstimatedData.length > 0 )
+                            {
+                            if ( hoursEstimatedData[0] > 0 )
+                            {
+                                //document.entryform.FWHoursEstimated.value = hoursEstimatedData[0];
+                                document.entryform.FWHoursEstimated.value = 'Do Enter';
+
+                                document.entryform.FWEstimatedHrsExisting.value =hoursEstimatedData;
+                                alert(hoursEstimatedData+'Test2');
+                            }
+                            else
+                            {
+                                document.entryform.FWHoursEstimated.value = 'Do Enter';
+                                document.entryform.FWEstimatedHrsExisting.value ='';
+                                alert(hoursEstimatedData+'Test3');
+
+                            }
+                            }
+                        }
+                        else
+                        {
+                            //document.entryform.FWHoursEstimated.value = '';
+                            alert(hoursEstimatedData+'Test4');
+                        }
+                    }
+                }
+                else {
+                        //document.entryform.FWHoursEstimated.value = '';
+                        // alert(hoursEstimatedData+'Test5');
+                }
+            }
+            else {
+                    //document.entryform.FWHoursEstimated.value = '';
+                    // alert(hoursEstimatedData+'Test6');
+            }
+          }
+         }
+        function changeActivityCodes (n)
+        {
+
+        /*	if (document.entryform.FWHoursEstimated.value==0)
+            {
+
+                document.entryform.FWHoursEstimated.value=40;
+
+            } */
+
+            if ( document.entryform.FWCurrentPage.value == 3 )
+            {
+                  significant = true;
+                  return true;
+            }
+
+          var significant;
+
+          /*oldActivityIndex = document.entryform.FWActivityCodeID.selectedIndex;
+
+
+          if ( oldActivityIndex >= 0 ) {
+              oldActivity = document.entryform.FWActivityCodeID.options[oldActivityIndex].text;
+          }*/
+
+          var selectedIndex = 0;
+          var offset;
+
+          if ( document.entryform.FWCurrentPage.value == 1 ) {
+                if( document.entryform.FWisSignificantEvent != undefined ) {
+                    significant = document.entryform.FWisSignificantEvent.checked;
+                } else {
+                    significant = false;
+                }
+                offset = 1;
+          }
+
+          if ( document.entryform.FWCurrentPage.value == 2 ) {
+              significant = false;
+              offset = 0;
+          }
+
+          if ( document.entryform.FWCurrentPage.value == 3 ) {
+              significant = true;
+              offset = 0;
+          }
+
+          if ( document.entryform.FWCurrentPage.value != 3 ) {
+              var projectValue= document.entryform.FWProjectID.options[n].value;
+
+            if ( projectValue != 'xxx' ) {
+                if ( !significant ) {
+                  clearActivityCodes();
+
+                  if ( document.entryform.FWCurrentPage.value == 1 )
+                  {
+                        document.entryform.FWActivityCodeID.options[0] =
+                            new Option('-- Select Activity Code --', 'xxx');
+
+                         //  clearHoursUsed();
+                            clearHoursEstimated();
+
+                  }
+
+        /*		if (document.entryform.FWCurrentPage.value == 2)
+                {
+                    n = n+1;
+                }
+
+                var activityCodeData = "";
+
+                if(admin=="1")
+                {
+                    activityCodeData = eval("prj");
+                }
+                else
+                {
+                       activityCodeData = eval("prj" + n);
+                }
+
+                for ( i = 0; i < activityCodeData.length; i++ ) {
+                    var activityCode = activityCodeData[i];
+                  var activityCodeId = activityCode[0];
+                  var activityCodeName = activityCode[1];
+
+                  if ( oldActivity == activityCodeName ) {
+                      selectedIndex = i + offset;
+                  }
+
+                  document.entryform.FWActivityCodeID.options[i + offset] =
+                          new Option(activityCodeName, activityCodeId);
+                }
+
+                document.entryform.FWActivityCodeID.options[selectedIndex].selected = true;*/
+
+                } else {
+                    setSignificant(true);
+                }
+
+            } else {
+            //  clearActivityCodes();
+            }
+          }
+        }
+
+        function clearChargeNums ()
+        {
+            while ( document.entryform.FWChargeNum.options.length > 0 ) {
+                document.entryform.FWChargeNum.options.length--;
+            }
+        }
+
+        function clearActivityCodes ()
+        {
+
+        try{
+          oldActivityIndex = document.entryform.FWActivityCodeID.selectedIndex;
+
+
+              if ( oldActivityIndex >= 0 ) {
+                  oldActivity = document.entryform.FWActivityCodeID.options[oldActivityIndex].text;
+                  //alert(oldActivity);
+
+
+              }
+              }
+              catch(err)
+              {
+              }
+
+        try{
+            while ( document.entryform.FWActivityCodeID.options.length > 0 ) {
+                document.entryform.FWActivityCodeID.options.length--;
+            }
+            }
+            catch(err)
+            {
+            }
+
+        }
+
+        function setSignificant (n)
+        {
+            var index = document.entryform.FWProjectID.selectedIndex;
+            try{
+            if(document.entryform.FWisSignificantEvent.checked)
+            {
+                document.getElementById('results').style.visibility= "hidden";
+                    document.getElementById('block').style.visibility= "hidden";
+                    document.getElementById('results2').style.visibility= "hidden";
+
+
+            }
+            else
+            {
+                document.getElementById('results').style.visibility= "visible";
+                    document.getElementById('block').style.visibility= "visible";
+                    document.getElementById('results2').style.visibility= "visible";
+
+            }
+            }
+            catch(err)
+            {
+            }
+
+            if ( index != 0 ) {
+                if ( n ) {
+                    clearChargeNums();
+                    clearActivityCodes();
+        try{
+                    //document.getElementById('results2').style.visibility= "hidden";
+                    document.entryform.FWChargeNum.options[0] = new Option("-- Not Applicable --", -1);
+                    document.entryform.FWChargeNum.options[0].selected = true;
+
+                    document.entryform.FWActivityCodeID.options[0] = new Option("-- Not Applicable --", -1);
+                    document.entryform.FWActivityCodeID.options[0].selected = true;
+
+                    document.entryform.FWHours.value = '0.0';
+
+                    //clearHoursUsed();
+                    clearHoursEstimated();
+            }
+            catch(err)
+            {
+
+            }
+
+
+                } else {
+
+                    var offset=1;
+                 var selectedIndex=0;
+                 clearProjectNumbers();
+                //alert(projectDataArray.length);
+
+                 document.entryform.FWProjectID.options[0] =
+                         new Option('-- Select Project --', 'xxx');
+
+                 for ( i = 0; i < projectDataArray.length; i++ ) {
+                         var activityCode = projectDataArray[i];
+                          var activityCodeId = activityCode[0];
+                          var activityCodeName = activityCode[1];
+
+                        //  alert(activityCodeName);
+
+                          document.entryform.FWProjectID.options[i + offset] =
+                           new Option(activityCodeName, activityCodeId);
+                    }
+                 document.entryform.FWProjectID.options[selectedIndex].selected = true;
+
+
+                    changeChargeNum(document.entryform.FWProjectID.selectedIndex);
+
+                    //changeActivityCodes(document.entryform.FWProjectID.selectedIndex);
+                }
+            }
+        }
+
+        function refresh ()
+        {
+            if ( isN4 ) {
+                history.go(1);
+            }
+
+        }
+
+        function setControl (monthIndex, yearIndex)
+        {
+            clearDays();
+
+            var daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            var daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+            var month = document.entryform.FWMonth.options[monthIndex].value;
+            var year = document.entryform.FWYear.options[document.entryform.FWYear.selectedIndex].value;
+            if ( year > "89" ) {
+                year = "19" + year;
+            } else {
+                year = "20" + year;
+            }
+
+            var maxDays = daysInMonth[monthIndex];
+            if ( (month == '02') && (year % 4 == 0) ) {
+                maxDays = maxDays + 1;
+            }
+
+            var today = new Date().getDate();
+            for ( i = 0; i <= maxDays - 1; i++ ) {
+                var dayIndex = i + 1;
+                var date = new Date(year, month - 1, dayIndex);
+
+                var dayOfWeek = dayIndex + " - " + daysOfWeek[date.getDay()];
+
+                document.entryform.FWDay.options[i] = new Option(dayOfWeek, dayIndex);
+
+                if ( dayIndex == today ) {
+                    document.entryform.FWDay.options[i].selected = true;
+                }
+            }
+
+        }
+
+        function clearDays ()
+        {
+            while ( document.entryform.FWDay.options.length > 0 ) {
+                document.entryform.FWDay.options.length--;
+            }
+        }
+
+        function checkActivityCode()
+        {
+            if( (document.entryform.FWHoursEstimated.value != "" && document.entryform.FWHoursEstimated.value > 0) )
+            {
+
+                //document.entryform.FWActivityCodeID.focus();
+
+            }
+            if(document.entryform.FWHoursEstimated.value == 'Do Enter'){
+                document.entryform.FWHoursEstimated.select();
+            }
+
+          }
+
+          function isActivityCodesSelected()
+          {
+
+            var activitycode = document.entryform.FWActivityCodeID.options[document.entryform.FWActivityCodeID.selectedIndex].value;
+
+            if(activitycode == 'xxx' )
+            {
+                alert("Do select a valid activity code");
+                return false;
+            }
+
+            return true;
+
+          }
+
+           function checkweekday()
+          {
+            try{
+
+
+            var selectedweekStart = new Date('<FIELD="FWPeriodInclStartdate">') ;
+            var selectedweekEnd = new Date('<FIELD="FWPeriodInclDisplay">') ;
+
+            var day = document.entryform.FWDay.options[document.entryform.FWDay.selectedIndex].value;
+            var month = document.entryform.FWMonth.options[document.entryform.FWMonth.selectedIndex].value
+            /*if (month == '12' && (day >= 30 && day <= 31) )
+                var year = '23';
+            else*/
+                var year = document.entryform.FWYear.options[document.entryform.FWYear.selectedIndex].value;
+
+
+
+            var selectedDate = new Date(month+'/'+day+'/'+year);
+            //alert('selectedDate '+selectedDate);
+            //alert('selectedweekStart '+selectedweekStart);
+            //alert('selectedweekEnd '+selectedweekEnd);
+
+             if( ( Date.parse(selectedweekStart ) <= Date.parse(selectedDate) ) && (Date.parse( selectedDate ) <= Date.parse( selectedweekEnd ) )  )
+             {
+
+                 return true ;
+
+              } else
+              {
+
+              return false;
+             }
+           } catch(err)   {}
+
+          }
+
+          // Used to check the new/edit enry allowable by activitycode scoped or activitycode access.
+          function isAllowedwithActivitycode()
+          {
+              var activitycode=null;
+              try{
+                  activitycode = document.entryform.FWActivityCodeID.options[document.entryform.FWActivityCodeID.selectedIndex].value;
+                  if(activitycode == -1 && !document.entryform.FWisSignificantEvent.checked)
+                      return false;
+                  else
+                      return true;
+              }catch(err){
+                  // Comes here when Time entry edit.
+                  // activitycode is null when significant event entry edit
+                  if(activitycode!=null && activitycode == -1)
+                      return false;
+              }
+
+          }
+
+          function isPassThruActivitycode()
+          {
+              var activitycode=null;
+              try{
+                  activitycode = document.entryform.FWActivityCodeID.options[document.entryform.FWActivityCodeID.selectedIndex].value;
+                    //alert(activitycode);
+                  if(activitycode ==230 || activitycode ==1735 || activitycode == 415 || activitycode == 435 || activitycode == 436 || activitycode == 437 || activitycode == 975 || activitycode == 976 || activitycode == 83
+                     || activitycode == 86 || activitycode == 233 || activitycode == 234 || activitycode == 1795 || activitycode == 1796 )
+                      return true;
+                  else
+                      return false;
+              }catch(err){
+
+              }
+
+          }
+        /*
+            function replace_LT_With_LTSpace(txt){
+                var len = txt.length;
+                var output="";
+                for(i=0;i<len;i++){
+                    var c =txt.charAt(i);
+                    if(c=='<'){
+                        if(len>(i+1)){
+                            if(txt.charAt(i+1)!=' '){
+                                output += (c+' ');
+                            }else
+                                output += c;
+                        }else{
+                            output += c;
+                        }
+                    }
+                    else
+                        output += c;
+                }
+                return output;
+            }
+        */
+            function checkDescCharLimit(){
+                var desc = document.entryform.FWDescription.value;
+                if(desc.length>3999)
+                  {
+                        alert('Entered description exceeds the limit 4000.You have entered '+desc.length+' characters');
+                        return true;
+                  }
+                  return false;
+            }
+
+            function isHolidayActivitycode()
+            {
+                var activitycode=null;
+                try{
+                    activitycode = document.entryform.FWActivityCodeID.options[document.entryform.FWActivityCodeID.selectedIndex].value;
+                        //alert(activitycode);
+                    if(activitycode ==52 || activitycode ==1837)
+                        return true;
+                    else
+                        return false;
+                }catch(err){
+
+                }
+
+            }
+
+            function holidayValidation(){
+
+                if('<FIELD="FWHolidayOverrideUser">'=='true' || '<FIELD="FWPayRollHolidayActiveStatus">'=='0')
+                    return true;
+
+                var isSuccess = false;
+                var employeeHolidayList = <FIELD="FWEmployeeHolidayList">;
+                for(j=0; j <employeeHolidayList.length;j++)
+                {
+                    var temp = employeeHolidayList[j];
+
+                    var day = document.entryform.FWDay.options[document.entryform.FWDay.selectedIndex].value;
+                    var month = document.entryform.FWMonth.options[document.entryform.FWMonth.selectedIndex].value
+                    var year = document.entryform.FWYear.options[document.entryform.FWYear.selectedIndex].value;
+
+                    if((day*1)<10)
+                        day ='0'+day;
+
+                    //alert('Ganesh '+temp+':'+month+'/'+day+'/'+year);
+                    if(temp==month+'/'+day+'/'+year)
+                        isSuccess = true;
+
+                }
+                return isSuccess;
+
+            }
+
+          function doValidations()
+          {
+              if(isContractor != 'c' && isHolidayActivitycode()){
+                  if(!holidayValidation()){
+                      alert('The selected date is not in your holiday list.');
+                      return false;
+                  }
+              }
+
+              document.entryform.FWDescription.value = jsTrim(document.entryform.FWDescription.value);
+              if(checkDescCharLimit()){
+                    return false;
+              }
+            disableSubmit('true');
+              if(isAllowedwithActivitycode() == false)
+              {
+                  alert ('Activity code Not yet Scoped / Assigned');
+                disableSubmit('false');
+                  return false;
+              }
+            try{
+            var wedate = "<FIELD="FWPeriodInclDisplay">";
+            if(checkweekday()){
+
+
+            }else
+            {
+
+                alert('Date on time entry is outside the WE:'+wedate+' chosen');
+                disableSubmit('false');
+                return false;
+
+            }
+            }catch(err){}
+
+            try{
+
+            if(document.entryform.FWHoursEstimated.type=='hidden')
+            {
+                document.entryform.FWHoursEstimated.value=0;
+            }
+
+            }
+            catch(err){}
+
+
+
+
+
+
+            if ( 1!=<FIELD="FWBilledEditMode"> )
+            {
+
+            var project = '';
+            try{
+             project = document.entryform.FWProjectID.options[document.entryform.FWProjectID.selectedIndex].value;
+              }
+              catch(err)
+              {
+
+              }
+            if(project == 'xxx' )
+            {
+                alert("Do select a valid project");
+                disableSubmit('false');
+                return false;
+            }
+            else
+            {
+
+                var val = 1;
+
+            try{
+
+            if(document.entryform.FWisSignificantEvent.checked)
+            {
+                val = 0;
+            }
+
+
+
+            }catch(err)
+            {
+                val = 1;
+            }
+
+            var isLocSelected =1 ;
+
+            try{
+
+             isLocSelected = document.entryform.FWLocationID.options[document.entryform.FWLocationID.selectedIndex].value
+
+             }catch(err){}
+
+            if(val ==1 && isLocSelected==0 )
+            {
+              alert('Do select a valid location') ;
+
+              document.entryform.FWLocationID.focus();
+
+              disableSubmit('false');
+
+              return false;
+
+            }
+
+
+            try{
+
+                if(isContractor != 'c'  && val == 1)
+                {
+                    if(''+document.entryform.FWHoursEstimated!= 'undefined' && document.entryform.FWHoursEstimated.value== 'Do Enter')
+                    {
+                        disableSubmit('false');
+                        alert("Estimated work hours should be between 0 and 999");
+                        document.entryform.FWHoursEstimated.select();
+                        return false;
+                    }
+                    else
+                    {
+                        if(val == 1)
+                        {
+                            if(document.entryform.FWHours.type != "hidden")
+                                {
+                                if(validateHours1(document.entryform.FWHours))
+                                {
+                                }
+                                else
+                                {
+                                    disableSubmit('false');
+                                    return false;
+                                }
+                            }
+                        }
+
+                    //var desc = document.entryform.FWDescription.value;
+                        var desc_ = stripSpaces(document.entryform.FWDescription.value);
+                        /*if(checkHyperLinkExist(desc_)){
+                            disableSubmit('false');
+                            alert('Please enter a valid text. Hyperlinks are not allowed.');
+                            return false;
+                        }*/
+                        if(empty(desc_))
+                        {
+                            alert('Please enter the description');
+                            disableSubmit('false');
+                            return false;
+                        }else if(textFieldValidation(document.entryform.FWDescription.value)==0){//Changes made not to allow special characters in description
+                            alert('Please remove the symbols from your description.');
+                            disableSubmit('false');
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    if(val == 0)
+                    {
+                        var desc_ = stripSpaces(document.entryform.FWDescription.value);
+                        /*if(checkHyperLinkExist(desc_)){
+                            disableSubmit('false');
+                            alert('Please enter a valid text. Hyperlinks are not allowed.');
+                            return false;
+                        }*/
+                        if(empty(desc_))
+                        {
+                            alert('Please enter the description');
+                            disableSubmit('false');
+                            return false;
+                        }else if(textFieldValidation(document.entryform.FWDescription.value)==0){//Changes made not to allow special characters in description
+                            alert('Please remove the symbols from your description.');
+                            disableSubmit('false');
+                            return false;
+                        }
+
+                    }
+                }
+            }
+            catch(err)
+            {
+            }
+
+
+                try{
+                if(document.entryform.FWHours.type != "hidden" && val == 1)
+                {
+                    if(validateHours1(document.entryform.FWHours))
+                    {
+                    }
+                    else
+                    {
+                        disableSubmit('false');
+                        return false;
+                    }
+
+                    var desc_ = stripSpaces(document.entryform.FWDescription.value);
+                    /*if(checkHyperLinkExist(desc_)){
+                        disableSubmit('false');
+                        alert('Please enter a valid text. Hyperlinks are not allowed.');
+                        return false;
+                    }*/
+                    if(empty(desc_))
+                    {
+                        alert('Please enter the description');
+                        disableSubmit('false');
+                        return false;
+                    }else if(textFieldValidation(document.entryform.FWDescription.value)==0){//Changes made not to allow special characters in description
+                        alert('Please remove the symbols from your description.');
+                        disableSubmit('false');
+                        return false;
+                    }
+
+                }else {
+                    try{
+                        if(document.entryform.FWisSignificantEvent.checked);
+                        {
+                            document.entryform.FWHours.value=0.0;
+                        }
+                    }
+                    catch(err)
+                    {}
+                }
+                }catch(e){}
+                <FIELD="FWEstimatedStringStart">
+                    try{
+                        var  a = 0;
+                    a =	parseFloat(document.entryform.FWHoursEstimated.value);
+
+                            if(a>0)
+                            {
+
+                            }
+                            else
+                            {
+
+
+                        }
+                    }
+                    catch(err)
+                    {
+
+                    }
+                <FIELD="FWEstimatedStringEnd">
+
+                try{
+                if(!isPassThruActivitycode())
+                {
+                var day = document.entryform.FWDay.value;
+                var month = document.entryform.FWMonth.value;
+                var year = document.entryform.FWYear.value;
+
+
+                     if(day.substring(0,1) !=0 && day <=9){
+                          day = '0'+day ;
+                     }
+                     if(Editeddday!=null && Editeddday.substring(0,1)!=0 && Editeddday<=9){
+                         Editeddday = '0'+Editeddday;
+                     }
+
+                 //alert(hoursPerdate);
+                 for ( i = 0; i < hoursPerdate.length; i++ )
+                 {
+
+                       var h1 = hoursPerdate[i];
+
+                          var hh1= h1[0];
+                         var hh2 = h1[1];
+                         var hh3 = h1[2];
+                         var hh4 = h1[3];
+
+                          if(hh1 <=9){
+                          hh1 = '0'+hh1 ;
+                         }
+
+                         if(hh2 <=9){
+                          hh2 = '0'+hh2 ;
+                         }
+                          if(hh3 <=9){
+                          hh3 = '0'+hh3 ;
+                         }
+
+
+
+
+                //alert(day+'ggg'+month+'year'+year+'day'+hh2 +' mon...'+hh1+'    yeasr..'+hh3);
+
+                   if(month== hh1 && day == hh2 && year ==hh3)
+                   {
+
+
+
+                             //var hh5= parseFloat(hh4)+parseFloat(document.entryform.FWHours.value);
+
+                             var retVal = 0;
+                             if(parseInt(update,10) == parseInt(1,10) && Editeddday == day)
+                             {
+                             var hh5 = 0;
+                             try{
+
+                              if(!(isNaN(updatingHours)))
+                              {
+
+                                  hh5= parseFloat(updatingHours)+parseFloat(document.entryform.FWHours.value);
+
+                              }else
+                              {
+                                  hh5=parseFloat(document.entryform.FWHours.value);
+                              }
+
+                             }catch(err)
+                             {
+                             }
+
+
+                             //alert(retVal +' update hours'+hh5 +'........Editeddday'+Editeddday);
+
+                             var significant = 0;
+
+                            try{
+                                significant = document.entryform.FWisSignificantEvent.checked;
+                            }
+                            catch(err)
+                            {
+                                significant = false;
+                            }
+
+
+
+
+                                if((retVal == 0) && (!significant))
+                                {
+
+                                     if(parseFloat(hh5) > parseFloat(24))
+                                     {
+
+                                        alert('Time entries per day cannot exceed 24 hours');
+                                        disableSubmit('false');
+                                        document.entryform.FWHours.select();
+                                        return false;
+                                    }
+                                }
+
+
+                        }
+                        else
+                        {
+                                var j = 0;
+                                var retVal = 0;
+
+
+                                    var hh5= parseFloat(hh4)+parseFloat(document.entryform.FWHours.value);
+
+                                    //alert(hh4+" HH5 : "+hh5+"-"+update);
+
+
+
+                                    var significant = 0;
+
+                            try{
+                                significant = document.entryform.FWisSignificantEvent.checked;
+                            }
+                            catch(err)
+                            {
+                                significant = false;
+                            }
+
+                                    if((retVal == 0) && (!significant))
+                                    {
+
+                                        if(parseFloat(hh5) > parseFloat(24))
+                                            {
+
+                                                alert('Time entries per day cannot exceed 24 hours');
+                                                disableSubmit('false');
+                                                document.entryform.FWHours.select();
+                                                return false;
+                                            }
+                                    }
+
+
+                        }
+
+                   }
+
+                 }
+
+                 }
+
+            }catch(e){}
+
+
+                try{
+                if( document.entryform.FWisSignificantEvent != undefined ) {
+                    significant = document.entryform.FWisSignificantEvent.checked;
+
+                }
+                else
+                {
+                    significant = false;
+                }
+
+                if ( document.entryform.FWCurrentPage.value == 3 )
+                {
+                      significant = true;
+                      //disableSubmit();
+                      //return true;
+                }
+
+                if (!significant)
+                {
+                    if (!isActivityCodesSelected())
+                    {
+                        disableSubmit('false');
+                        return false;
+                    }
+                    else
+                    {
+                        if(!isHoursSpecified())
+                        {
+                            disableSubmit('false');
+                            document.entryform.FWHours.select();
+                            return false;
+                        }
+                    }
+                }
+                }catch(e){}
+
+            }
+
+
+            }
+
+                <FIELD="FWEstimatedStringStart">
+
+
+                if(validateHours(document.entryform.FWHoursEstimated))
+
+                {
+
+
+                    //return true;
+                }
+                else
+                {
+                    disableSubmit('false');
+                    return false;
+                }
+
+                <FIELD="FWEstimatedStringEnd">
+
+
+
+
+
+            //document.entryform.FWDescription.value = replace_LT_With_LTSpace(document.entryform.FWDescription.value);
+            return true;
+
+          }
+
+          /*This function checks for special character. If the special character is one among
+           *non-printable characters it returns 0 else it returns 1.
+           */
+          function textFieldValidation(InString)
+          {
+               var RefString="abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ.,\"'?!;:#$%&()*+-/=@[]\\^_{}|~` \n\r\t\b";
+                if(InString.length>0)
+                {
+                    InString = ReplaceAll(InString, String.fromCharCode(8220), String.fromCharCode(34)); //Replace smart character “ with "
+                    InString = ReplaceAll(InString, String.fromCharCode(8221), String.fromCharCode(34)); //Replace smart character ” with "
+                    InString = ReplaceAll(InString, String.fromCharCode(8217), String.fromCharCode(39));  //Replace smart character ’ with '
+                    InString = ReplaceAll(InString, String.fromCharCode(8216), String.fromCharCode(39)); //Replace smart character ‘ with '
+                    InString = ReplaceAll(InString, String.fromCharCode(8211), "-");//Replace smart character – with -
+                    for (Count=0; Count < InString.length; Count++)
+                    {
+                        TempChar= InString.substring (Count, Count+1);
+                        if (RefString.indexOf (TempChar, 0)==-1) {
+                                return (0);
+                          }
+                    }
+                }else{    return (0) }
+                 return (1);
+         }
+
+              function ReplaceAll(Source,stringToFind,stringToReplace){
+              var temp = Source;
+              var index = temp.indexOf(stringToFind);
+                  while(index != -1){
+                    temp = temp.replace(stringToFind,stringToReplace);
+                    index = temp.indexOf(stringToFind);
+                }
+                return temp;
+            }
+
+
+          function isHoursSpecified()
+          {
+
+             if (!isNaN(document.entryform.FWHours.value))
+              {
+                  if(document.entryform.FWHours.value <= 0)
+                  {
+                      alert("Specify a valid value for hours worked");
+                      document.entryform.FWHours.focus();
+                      return false;
+                  }
+            }
+
+              return true;
+
+          }
+
+          function estimateLoader()
+          {
+            <FIELD="FWEstimatedStringStart">
+            try{
+            if ( document.entryform.FWCurrentPage.value != 3  &&  1!=<FIELD="FWBilledEditMode">)
+            {
+                changeHoursEstimated(document.entryform.FWActivityCodeID.selectedIndex);
+            }
+            }
+            catch(err)
+            {
+
+            }
+            <FIELD="FWEstimatedStringEnd">
+          }
+
+        function loadProject()
+          {
+                var offset=1;
+                var selectedIndex=0;
+
+                clearProjectNumbers();
+                //alert(projectDataArray.length);
+
+                document.entryform.FWProjectID.options[0] =
+                 new Option('-- Select Project --', 'xxx');
+
+                for ( i = 0; i < AllprojectDataArray.length; i++ ) {
+                        var activityCode = AllprojectDataArray[i];
+                         var activityCodeId = activityCode[0];
+                         var activityCodeName = activityCode[1];
+                         //alert(activityCodeName);
+                         document.entryform.FWProjectID.options[i + offset] =
+                         new Option(activityCodeName, activityCodeId);
+                    }
+                    //mx="1";
+         document.entryform.FWProjectID.options[selectedIndex].selected = true;
+
+
+
+
+          }
+
+        function clearProjectNumbers()
+        {
+            while ( document.entryform.FWProjectID.options.length > 0 ) {
+         document.entryform.FWProjectID.options.length--;
+         }
+
+        }
+
+        function loadProjects(pr)
+        {
+         var index = document.entryform.FWProjectID.selectedIndex;
+
+
+                if(document.entryform.FWisSignificantEvent.checked)
+                {
+                    loadProject();
+
+                }
+        else
+                {
+                clearProjectNumbers();
+                var offset=1;
+                var selectedIndex=0;
+                //alert(projectDataArray.length);
+                document.entryform.FWProjectID.options[0] =
+                 new Option('-- Select Project --', 'xxx');
+
+                 for ( i = 0; i < projectDataArray.length; i++ )
+                  {
+                        var projects = projectDataArray[i];
+                        var projectId = projects[0];
+                        var projectName = projects[1];
+                        //  alert(activityCodeName);
+                        document.entryform.FWProjectID.options[i + offset] =
+                        new Option(projectName, projectId);
+                    }
+
+
+                }
+
+        }
+
+
+        function loadProjectData()
+        {
+            var offset=1;
+         	var selectedIndex=0;
+        	//alert(projectDataArray.length);
+
+         	document.entryform.FWProjectID.options[0] =
+            new Option('-- Select Project --', 'xxx');
+
+         	for ( i = 0; i < projectDataArray.length; i++ ) {
+         		var projects = projectDataArray[i];
+                var projectId = projects[0];
+                var projectName = projects[1];
+
+                //  alert(activityCodeName);
+
+
+                document.entryform.FWProjectID.options[i + offset] =
+                new Option(projectName, projectId);
+        	}
+         	document.entryform.FWProjectID.options[selectedIndex].selected = true;
+        }
+
+        /*function hoursValidation()
+        {
+            var hours = document.entryform.FWHours.value;
+            if(hours < 25 )
+            {
+                return true;
+            }
+            else
+            {
+        //		alert("Hours should be less than or equal to 24");
+        //		return false;
+            }
+        }*/
+
+
+        function addValidateHours(field)
+            {
+
+
+
+        try{
+
+
+
+                if (document.entryform.FWHoursEstimated.value == "")
+                {
+                    if(document.entryform.FWCurrentPage.value == 1)
+                    {
+                        if(document.entryform.FWisSignificantEvent.checked)
+                        {
+                            document.entryform.FWHoursEstimated.value = 0;
+
+                        }
+                        else
+                        {
+
+
+                            if (document.entryform.FWHoursEstimated.type == "hidden")
+                            {
+                                return true;
+                            }
+                            else
+                            {
+
+                                alert('Please enter Estimated Remaining Hours');
+                                return false;
+
+                            }
+
+                        }
+                    }
+                    else
+                    {
+
+                            if (document.entryform.FWHoursEstimated.type == "hidden")
+                            {
+                                return true;
+                            }
+                            else
+                            {
+
+                                alert('Please enter Estimated Remaining Hours');
+                                return false;
+
+                            }
+
+
+
+                    }
+
+                }
+
+
+                var valid = "0123456789."
+                var ok = "yes";
+                var ok1 = "yes";
+                var temp;
+                for (var i=0; i<field.value.length; i++) {
+                    temp = "" + field.value.substring(i, i+1);
+                    if (valid.indexOf(temp) == "-1") ok = "no";
+                }
+
+
+                if (ok == "no" ) {
+                    if(document.entryform.FWHoursEstimated.type!='hidden')
+                    {
+                        if(document.entryform.FWisSignificantEvent.checked)
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                        alert("Estimated work hours should be between 0 and 999");
+                        field.focus();
+                        field.select();
+                        document.entryform.FWHoursEstimated.select();
+                        return(false);
+
+                        }
+                    }
+                    else
+                    {
+                        return true;
+                    }
+
+                }
+                if(field.value <= parseFloat(999) && field.value >= 0 )
+                {
+                    return true;
+                }
+                else
+                {
+                    if(document.entryform.FWisSignificantEvent.checked)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        alert("Estimated work hours should be between 0 and 999");
+                        document.entryform.FWHoursEstimated.select();
+                        return false;
+                    }
+                }
+
+
+
+                   return(true);
+
+        }
+        catch (err)
+        {
+
+            return true;
+
+        }
+
+        }
+
+
+            <FIELD="FWEstimatedStringStart">
+
+            function validateHours(field)
+            {
+
+                var sig ="0" ;
+                try
+                {
+                    if(document.entryform.FWisSignificantEvent.checked && document.entryform.FWisSignificantEvent.checked!=null)
+                        sig ="1";
+                }catch(err){
+                    sig ="0";
+                }
+
+
+                if (document.entryform.FWHoursEstimated.value == "")
+                {
+                    if(document.entryform.FWCurrentPage.value == 1)
+                    {
+                        if(sig == "1")
+                        {
+                            document.entryform.FWHoursEstimated.value = 0;
+
+                        }
+                        else
+                        {
+
+                            if (document.entryform.FWHoursEstimated.type == "hidden")
+                            {
+                                return true;
+                            }
+                            else
+                            {
+
+                                alert('Please enter Estimated Remaining Hours');
+                                return false;
+
+                            }
+
+                        }
+                    }
+                    else
+                    {
+
+
+                            if (document.entryform.FWHoursEstimated.type == "hidden")
+                            {
+                                return true;
+                            }
+                            else
+                            {
+
+                                alert('Please enter Estimated Remaining Hours');
+                                return false;
+
+                            }
+
+
+                    }
+
+                }
+
+
+                if(sig == "1" ||document.entryform.FWHoursEstimated.type == "hidden")
+                {
+                    document.entryform.FWHoursEstimated.value = 0;
+                }
+                else
+                {
+                    var valid = "0123456789."
+                    var ok = "yes";
+                    var ok1 = "yes";
+                    var temp;
+                    for (var i=0; i<field.value.length; i++) {
+                        temp = "" + field.value.substring(i, i+1);
+                        if (valid.indexOf(temp) == "-1") ok = "no";
+                    }
+                    if(field.value.length == 0)
+                    {
+                        ok = "no";
+                    }
+
+
+                    if (ok == "no" ) {
+                        alert("Estimated work hours should be between 0 and 999");
+                        field.focus();
+                        field.select();
+                        document.entryform.FWHoursEstimated.select();
+                        return(false);
+                    }
+                    if(field.value <= parseFloat(999) && field.value >= 0 )
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        alert("Estimated work hours should be between 0 and 999");
+                        document.entryform.FWHoursEstimated.select();
+                        return false;
+                    }
+                }
+
+
+                return(true);
+            }
+
+            <FIELD="FWEstimatedStringEnd">
+
+            function validateHours1(field)
+            {
+                var valid = "0123456789."
+                var ok = "yes";
+                var ok1 = "yes";
+
+                var temp;
+                try{
+                for (var i=0; i<field.value.length; i++) {
+                temp = "" + field.value.substring(i, i+1);
+                if (valid.indexOf(temp) == "-1") ok = "no";
+                }
+
+                if(field.value.length == 0)
+                {
+                    ok = "no";
+                }
+
+                if (ok == "no" ) {
+                alert("Invalid entry ! Only numbers are accepted. ");
+                field.focus();
+                field.select();
+                return(false);
+                   }
+                 }catch(err)
+                 {
+                 }
+
+                if(addValidateHours(document.entryform.FWHoursEstimated))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+
+
+
+
+                 //  return(true);
+            }
+
+
+            function disableSubmit(flag)
+            {
+            //alert('submit');
+
+                try{
+
+                        if(flag == 'true')
+                        {
+                            document.getElementById('submit').style.visibility= "hidden";
+                            document.getElementById('messageDisplay').style.visibility= "visible";
+                            document.getElementById('reset').style.visibility= "hidden";
+                            document.getElementById('delete').style.visibility= "hidden";
+                        }
+                        else
+                        {
+                            document.getElementById('submit').style.visibility= "visible";
+                            document.getElementById('messageDisplay').style.visibility= "hidden";
+                            document.getElementById('reset').style.visibility= "visible";
+                            document.getElementById('delete').style.visibility= "visible";
+                        }
+                }
+                catch(err)
+                {
+                }
+
+            }
+            var button_='submit';
+            function doSubmit(){
+                if(button_ == 'submit'){
+                    if(!doValidations())
+                        return false;
+                    else
+                        return true;
+                }
+                else if(button_ == 'delete'){
+                    disableSubmit('true');
+                    return true;
+                }
+            }
+
+        function descSpellCheck(){
+            var sFeatures="dialogHeight: " + 400 + "px; scroll=yes";
+            var myObject = new Object();
+            myObject.description = document.getElementById("FWDescription").value;
+            var spacecount = 0;
+            var spaceflag = true;
+            for(var i=0;i<myObject.description.length;i++){
+            if(myObject.description.charAt(i) ==" "){
+            spacecount = spacecount + 1;
+            }else{
+            break;
+            }
+            }
+            if(myObject.description.length == spacecount){
+            alert('Please enter valid text to check');
+            spaceflag = false;
+            }
+            var result ="";
+            if(myObject.description.length>0 && spaceflag){
+            var safeQueryString = Spiltdescription();
+                ajaxFunction("/servlets/Spellcheck",safeQueryString);
+                document.getElementById("FWDescription").focus();
+            }else{
+            }
+        }
+
+        function Spiltdescription(){
+
+        var descEntered = document.getElementById("FWDescription").value;
+        var RefString="abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ'";
+        var descArray = new Array();
+        var inString = "";
+        var wordsCount =0;
+        for (Count=0; Count < descEntered.length; Count++)
+        {
+            var TempChar= descEntered.substring (Count, Count+1);
+            if (RefString.indexOf (TempChar, 0)==-1) {
+                descEntered = descEntered.replace(TempChar," ");
+            }
+
+        }
+        return descEntered;
+        }
+
+        function getXMLObject()  //XML OBJECT
+        {
+           var xmlHttp = false;
+           try {
+             xmlHttp = new ActiveXObject("Msxml2.XMLHTTP")  // For Old Microsoft Browsers
+           }
+           catch (e) {
+             try {
+               xmlHttp = new ActiveXObject("Microsoft.XMLHTTP")  // For Microsoft IE 6.0+
+             }
+             catch (e2) {
+               xmlHttp = false   // No Browser accepts the XMLHTTP Object then false
+             }
+           }
+           if (!xmlHttp && typeof XMLHttpRequest != 'undefined') {
+             xmlHttp = new XMLHttpRequest();        //For Mozilla, Opera Browsers
+           }
+           return xmlHttp;  // Mandatory Statement returning the ajax object created
+        }
+
+        var xmlhttp = new getXMLObject();	//xmlhttp holds the ajax object
+
+        function ajaxFunction(url,desc) {
+          if(xmlhttp) {
+            xmlhttp.open("POST",url,true); //getname will be the servlet name
+            xmlhttp.onreadystatechange  = handleServerResponse;
+            xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xmlhttp.send("searchArg=" + desc); //Posting txtname to Servlet
+          }
+        }
+        function handleServerResponse() {
+           if (xmlhttp.readyState == 4) {
+             if(xmlhttp.status == 200) {
+                var results = xmlhttp.responseText;      //Update the HTML Form element
+                var sFeatures="dialogHeight: " + 400 + "px; scroll=yes";
+                   var myObject = new Object();
+                   myObject.description = document.getElementById("FWDescription").value;
+                   myObject.suggestions = results;
+                var checkedstr = window.showModalDialog("/jsp/Spellcheck.jsp",myObject,sFeatures);
+                if(typeof(checkedstr)=="undefined"){
+                }else{
+                document.getElementById("FWDescription").value = checkedstr;
+                }
+             }
+             else {
+                alert("Please try again");
+             }
+           }
+        }
+        function setDateOnLoad(){
+        try{
+        if(document.entryform.FWCurrentPage.value == 2 || document.entryform.FWCurrentPage.value == 3){
+        return true;
+        }
+        }catch(err){
+            return true;
+        }
+         var today = new Date((new Date().getMonth()+1) + "/" + new Date().getDate() + "/" +   new Date().getFullYear().toString().substring(2));
+         var temp = weekArray[0];
+         var startDate = new Date(temp[1] + "/" + temp[0] + "/" +  temp[2]);
+         temp = weekArray[6];
+         var enddate = new Date(temp[1] + "/" + temp[0] + "/" +  temp[2]);
+         //alert(today);
+         if(Date.parse(today) >= Date.parse(startDate) && Date.parse(today) <= Date.parse(enddate)){
+             //alert("Between");
+             return true;
+         }else{
+             validatedateselection(document.entryform.FWMonth.options[0].value,1);
+             document.entryform.FWMonth.options[0].selected = true;
+         }
+
+        }
+        function validatedateselection(selectedValue,selectedOption){
+
+            //alert('validatedateselection '+selectedOption);
+            if(selectedOption == 1){
+                var day  = 0;
+                var year = 0;
+                for(var i=0;i<weekArray.length;i++){
+                    var innerarray = weekArray[i];
+                    if(parseInt(innerarray[1]) == parseInt(selectedValue)){
+                        day  = innerarray[0];
+                        year = innerarray[2];
+                        break;
+                    }
+
+                }
+                //alert(day);
+                //alert(year);
+                for(var j=0;j<=6;j++){
+                    var dvalue = document.entryform.FWDay.options[j].value
+                    if(dvalue == day){
+                        document.entryform.FWDay.options[j].selected = true;
+                        break;
+                    }
+                }
+
+                for(j=0;j<1;j++){
+
+                var weekFirstValue =weekArray[0];
+                    if(weekFirstValue == "30,12,23")
+                    {
+                        var x = document.entryform.FWYear; //document.getElementById("FWYear");
+                         $("x option").remove();
+                            var option = document.createElement("option");
+                            //option.value.selected = true;
+                            option.value = "23";
+                            option.text = "2023";
+                            option.value = "24";
+                            option.text = "2024";
+                            x.add(option);
+                            x.selectedIndex = "1";
+                            break;
+                    }
+
+                    if(year == "23")
+                    {
+                        var yvalue = year;
+                    }else if(year == "24")
+                    {
+                        var yvalue = year;
+                    }
+                    else
+                     {
+                    var yvalue = document.entryform.FWYear.options[j].value
+                    document.entryform.FWYear.options[j].selected = true;
+                     }
+
+                    if(year == "23")
+                    {
+                        var x = document.entryform.FWYear;  //document.getElementById("FWYear");
+
+                        if(x.length > 0) {
+                         $("x option").remove();
+                        }
+                            var option = document.createElement("option");
+                            option.value="23";
+                            option.text="2023";
+                            option.value.selected = true;
+                            x.add(option);
+                            break;
+                    }
+                    if(year == "24")
+                    {
+                        var x = document.entryform.FWYear;  //document.getElementById("FWYear");
+
+                        if(x.length > 0) {
+                         $("x option").remove();
+                        }
+                            var option = document.createElement("option");
+                            option.value="24";
+                            option.text="2024";
+                            option.value.selected = true;
+                            x.add(option);
+                            break;
+                    }
+                }
+
+            }
+
+            else if(selectedOption == 2){
+                 var month = 0;
+                 var year = 0;
+                for( i=0;i<weekArray.length;i++){
+                    var innerarray = weekArray[i];
+                    if(parseInt(innerarray[0]) == parseInt(selectedValue)){
+                        month  = innerarray[1];
+                        year = innerarray[2];
+                        break;
+                    }
+
+                }
+                //alert(month);
+                //alert(year);
+                for( j=0;j<=1;j++){
+                    var mvalue = document.entryform.FWMonth.options[j].value
+                    if(mvalue == month){
+                        document.entryform.FWMonth.options[j].selected = true;
+                        break;
+                    }
+                }
+                for(j=0;j<1;j++){
+
+                if(year == "23")
+                    {
+                        var yvalue = year;
+                    }else if(year == "24")
+                    {
+                        var yvalue = year;
+                    }
+                    else
+                     {
+                    var yvalue = document.entryform.FWYear.options[j].value
+                    document.entryform.FWYear.options[j].selected = true;
+                     }
+
+                    if(year == "23")
+                    {
+                        var x = document.entryform.FWYear;  //document.getElementById("FWYear");
+
+                        if(x.length > 0) {
+                         $("x option").remove();
+                        }
+                            var option = document.createElement("option");
+                            option.value ="23";
+                            option.text="2023";
+                            option.value.selected = true;
+                            x.add(option);
+                            break;
+                    }
+
+                    //var yvalue = document.entryform.FWYear.options[j].value
+                    //if(yvalue == year){
+                    //	document.entryform.FWYear.options[j].selected = true;
+                    //	break;
+                    //}
+                    if(year == "24")
+                    {
+                        var x = document.entryform.FWYear;  //document.getElementById("FWYear");
+
+                        if(x.length > 0) {
+                         $("x option").remove();
+                        }
+                            var option = document.createElement("option");
+                            option.value="24";
+                            option.text="2024";
+                            option.value.selected = true;
+                            x.add(option);
+                            break;
+                    }
+                }
+
+            }else if(selectedOption == 3){
+                var day  = 0;
+                var month = 0;
+                for(var i=0;i<weekArray.length;i++){
+                    var innerarray = weekArray[i];
+                    if(parseInt(innerarray[2]) == parseInt(selectedValue)){
+                        day  = innerarray[0];
+                        month = innerarray[1];
+                        break;
+                    }
+
+                }
+                //alert(day);
+                //alert(month);
+                for(var j=0;j<=6;j++){
+                    var dvalue = document.entryform.FWDay.options[j].value
+                    if(dvalue == day){
+                        document.entryform.FWDay.options[j].selected = true;
+                        break;
+                    }
+                }
+                for(j=0;j<=1;j++){
+                    var mvalue = document.entryform.FWMonth.options[j].value
+                    if(mvalue == month){
+                        document.entryform.FWMonth.options[j].selected = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+
+	</script>
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" link="#0000ff" vlink="#800080" alink="#ff0000"  onLoad="estimateLoader();setDateOnLoad();">
+
+
+
+<FIELD="FWTimeEntryStart">
+<form name="entryform" action="/servlets/ProxyServlet" method="post" onSubmit=" return doSubmit();">
+	<input type="hidden" name="FWModule" value="timelogger">
+	<input type="hidden" name="FWCurrentPage" value="<FIELD="FWCurrentPage">">
+	<input type="hidden" name="FWSubmit" value="true">
+	<input type="hidden" name="FWSourceXML" value="">
+	<input type="hidden" name="FWMessageTxt" value="false">
+	<input type="hidden" name="FWOldProjectID" value="<FIELD="FWOldProjectID">">
+	<table width="100%">
+		<FIELD="FWIDStart">
+		<tr>
+			<td width="5%"></td>
+			<td align="left" valign="top">
+
+				Employee Name:&nbsp;<FIELD="FWEmployeeName"><br>
+				Time for week ending:&nbsp;<FIELD="FWPeriodInclDisplay">
+			</td>
+		</tr>
+		<tr>
+			<td width="5%"></td>
+		</tr>
+		<FIELD="FWIDEnd">
+		<tr align="left">
+			<td width="15%" align="right">Date:</td>
+			<td width="85%"align="left" colspan="2">
+				<select <FIELD="FWdisableDate"> name="FWMonth" onChange="validatedateselection(this.value,1); return false;">
+				<FIELD="FWMonthList">
+				</select>
+
+				<select <FIELD="FWdisableDate"> name="FWDay" onChange="validatedateselection(this.value,2);">
+				<FIELD="FWDayList">
+				</select>
+
+				<select <FIELD="FWdisableDate"> name="FWYear"	onChange="validatedateselection(this.value,3); return false;">
+				<FIELD="FWYearList">
+				</select>
+			</td>
+		</tr>
+		<tr align="left">
+			<td align="right">Project Num:</td>
+			<td align="left" colspan="2">
+
+				<FIELD="FWStaticProjectStart">
+				<FIELD="FWProjectDisplay">
+				<FIELD="FWStaticProjectEnd">
+
+				<FIELD="FWProjectStart">
+				<select name="FWProjectID"  onChange="startRequest(this.value);clearHoursEstimated();changeChargeNum(this.selectedIndex);refresh();return false;"></select>
+<!--				<script>loadProjectData();</script>-->
+				<FIELD="FWProjectEnd">
+				<FIELD="FWSEEntryStart">
+
+				<input type="checkbox" name="FWisSignificantEvent" onClick="setSignificant(this.checked);loadProjects(this.checked);refresh();">
+				Significant Event. (Check for Yes)
+				<FIELD="FWSEEntryEnd">
+			</td>
+		</tr>
+		<FIELD="FWTimeDetailsStart">
+		<tr><td colspan="3"></td>&nbsp;</tr>
+		<tr align="left">
+			<td width="15%" align="right">Charge Number:</td>
+			<td width="43%" align="left">
+				<select name="FWChargeNum">
+					<FIELD="FWChargeNumList">
+				</select>
+			</td>
+			<td width="42%" id="results" align="left">
+
+			</td>
+		</tr>
+		<tr align="left">
+			<td align="right">Activity Code:</td>
+			<td align="left" colspan="2" id = "results1">
+				<FIELD="FWActivityDisplay">
+			</td>
+		</tr>
+		<tr align="left">
+			<td align="right">Hours:</td>
+			<td align="left" colspan="2">
+				<FIELD="FWHoursDisplay">
+
+				<FIELD="FWHoursEstimatedStart">
+				<FIELD="FWHoursEstimatedDisplay">
+
+				<FIELD="FWHoursEstimatedEnd">
+			</td>
+		</tr>
+		<FIELD="FWTimeDetailsEnd">
+		<tr><td colspan="3"></td>&nbsp;</tr>
+		<tr align="left">
+			<td width="15%" align="right" valign="top">Description:</td>
+			<td width="84%" align="left" colspan="1">
+				<textarea cols="65" name="FWDescription" id="FWDescription" rows="4" wrap="vertical"><FIELD="FWDescription"></textarea>
+			</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><input type="button" value="Spell Check" onclick="descSpellCheck();"/></td>
+		</tr>
+	</table>
+	<br>
+	<center>
+
+
+		<input type="submit" id="submit" value="Submit" onClick="button_='submit';" >
+
+
+
+		<FIELD="FWDeleteButtonStart">
+
+		<input type="button" value="Reset" id = "reset" onClick="document.location.reload()">
+
+		<input type="submit" name="FWDeleteButton" id= "delete" value="Delete" onClick="button_='delete';">
+		<FIELD="FWDeleteButtonEnd">
+		<br>
+		<font color="#00FF00"><b>
+			<span id = "messageDisplay" >Please Wait ! Your request is processing.....</span>
+		</b></font>
+
+		<br>
+	</center>
+</form>
+<FIELD="FWTimeEntryEnd">
+<center>
+	<a href="/servlets/ProxyServlet?FWModule=timelogger&FWCurrentPage=0&FWRetry=true">Restart</a>
+</center>
+
+<center><strong>
+	<font color="#FF0000">
+		<label style="display: <FIELD="FWScopeUsedMsg">">Your time entry has NOT been accepted.<br>The entry would exceed the Scoped hour amount. Please contact your <FIELD="FW_ENGMANAGER_GROUPLABEL">.</label>
+	</font>
+</strong></center>
+
+<center><strong>
+	<font color="#FF0000">
+		<label style="display: <FIELD="FWTimeOffUsedMsg">">Your time entry has NOT been accepted.<br>The entry would exceed the Limit.</label>
+	</font>
+</strong></center>
+
+<center><strong>
+	<font color="#FF0000">
+		<label style="display: <FIELD="FWHolidayUsedMsg">">Your time entry has NOT been accepted.<br>The entry would exceed the Holiday Hour Limit(<FIELD="FWHolidayHours">).</label>
+	</font>
+</strong></center>
+
+<center><strong>
+	<font color="#FF0000">
+		<label style="display: <FIELD="FWHardLockMsg">">Your time entry has NOT been accepted.<br>The time entries for the date(s) chosen are already locked by administrator.</label>
+	</font>
+</strong></center>
+
+<center><strong>
+	<font color="#FF0000">
+		<label style="display: <FIELD="FWTLCutOffkMsg">">Your time entry has NOT been accepted.<br>you can make time entries after <FIELD="FWTLCutOffkMsg1">.</label>
+	</font>
+</strong></center>
+
+
+<FIELD="FWHRStart">
+<CENTER><STRONG><LABEL style="VISIBILITY: <FIELD="FWOnholdStatus">">The project <FIELD="FWOnholdProjectNumber"> has gone to On hold-Executing.</LABEL>  </STRONG></CENTER>
+<CENTER><STRONG><font color="#FF0000"><LABEL style="VISIBILITY: <FIELD="FWRevIncreaseMessage">">Your time entry has NOT been accepted.<br>  The project: <FIELD="FWProjectNumber"> would exceed the Scoped amount/PO Amount on accepting your time entry. Please contact your <FIELD="FW_PROJECTLEADER_GROUPLABEL">.</LABEL> </font> </STRONG></CENTER>
+<hr>
+<FIELD="FWHREnd">
+<FIELD="FWSEEntriesStart">
+<b>Significant Events</b>
+<font size="-1">
+	<table width="100%" border="1" cellspacing="0" cellpadding="3">
+		<thead>
+		<tr bgcolor="lightgrey">
+			<th align="center" valign="middle" width="15%"><font size="-1">Date</font></th>
+			<th align="center" valign="middle" width="15%"><font size="-1">Project #</font></th>
+			<th align="center" valign="middle" width="70%"><font size="-1">Significant Event</font></th>
+		</tr>
+		</thead>
+		<tbody>
+		<FIELD="FWEnteredSignificantEventTable">
+		<tbody>
+		<tfoot>
+		<tr >
+		<tr bgcolor="lightgrey">
+			<th colspan="3"><font size="-1">&nbsp;</font></th>
+		</tr>
+		</tfoot>
+	</table>
+</font>
+<br>
+<FIELD="FWSEEntriesEnd">
+<FIELD="FWTimeEntriesStart">
+<b>Time Summary</b>
+<table cols="2" border width="100%">
+	<tr>
+		<td width="80%" align="left" valign="top">
+			<table width="100%" border="1" cellspacing="0" cellpadding="3">
+				<thead>
+				<tr bgcolor="lightgrey">
+					<th align="center" valign="middle" width="10%"><font size="-1">Date</font></th>
+					<th align="center" valign="middle" width="10%"><font size="-1">Project #</font></th>
+					<th align="center" valign="middle" width="10%"><font size="-1">Charge #</font></th>
+					<th align="center" valign="middle" width="15%"><font size="-1">Activity Code</font></th>
+
+					<th align="center" valign="middle" width="45%"><font size="-1">Description</font></th>
+					<th align="center" valign="middle" width="10%"><font size="-1">Hours</font></th>
+				</tr>
+				</thead>
+				<tbody>
+				<FIELD="FWEnteredTimeTable">
+				<tbody>
+			</table>
+		</td>
+		<td width="20%" align="left" valign="top">
+			<table width="100%" border="0" cellspacing="0" cellpadding="2">
+				<tr>
+					<th align="left" valign="middle"><font size="-1">Saturday</font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWSaturdayDate"></font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWSaturdayTotal"></font></th>
+				</tr>
+				<tr>
+					<th align="left" valign="middle" ><font size="-1">Sunday</th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWSundayDate"></font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWSundayTotal"></font></th>
+				</tr>
+				<tr>
+					<th align="left" valign="middle"><font size="-1">Monday</font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWMondayDate"></font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWMondayTotal"></font></th>
+				</tr>
+				<tr>
+					<th align="left" valign="middle"><font size="-1">Tuesday</font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWTuesdayDate"></font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWTuesdayTotal"></font></th>
+				</tr>
+				<tr>
+					<th align="left" valign="middle"><font size="-1">Wednesday</font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWWednesdayDate"></font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWWednesdayTotal"></font></th>
+				</tr>
+				<tr>
+					<th align="left" valign="middle"><font size="-1">Thursday</font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWThursdayDate"></font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWThursdayTotal"></font></th>
+				</tr>
+				<tr>
+					<th align="left" valign="middle"><font size="-1">Friday</font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWFridayDate"></font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWFridayTotal"></font></th>
+				</tr>
+				<tr>
+					<th align="left" valign="middle"><font size="-1">Other</font></th>
+					<th align="right" valign="middle"><font size="-1">&nbsp;</font></th>
+					<th align="right" valign="middle"><font size="-1"><FIELD="FWOtherTotal"></font></th>
+				</tr>
+				<tr>
+					<td colspan="3"><font size="-1">&nbsp;</font></td>
+				</tr>
+				<tr>
+					<th align="right" valign="middle" colspan="2"><font size="-1">Total Hours</font></th>
+					<th bgcolor="lightgrey" align="center" valign="middle"><font size="-1"><FIELD="FWTotalHours"></font></th>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+<FIELD="FWTimeEntriesEnd">
+</body>
+</html>
+
+
+
+<script>
+	try{
+
+        if(isBilled+0 == 0 && disableDate == true)
+
+         {
+
+
+         }
+         else
+         {
+
+             if(isBilled == 1 || disableDate == true)
+             {
+                 document.entryform.FWMonth.disabled = true;
+                 document.entryform.FWDay.disabled= true;
+                 document.entryform.FWYear.disabled = true;
+                 document.entryform.FWChargeNum.disabled = true;
+                 //document.entryform.FWLocationID.readonly = true;
+                 var len = document.entryform.FWLocationID.length;
+
+                try{
+                    for(k=0;k<len;k++)
+                    {
+
+                        document.entryform.FWLocationID.remove(document.entryform.FWLocationID.selectedIndex+1);
+
+                    }
+
+                    for(k=0;k<len;k++)
+                    {
+
+                        document.entryform.FWLocationID.remove(document.entryform.FWLocationID.selectedIndex-1);
+
+                    }
+                }
+                catch(err)
+                {
+
+                }
+
+
+            }
+        }
+
+        }
+        catch(err)
+        {
+        }
+
+
+    try{
+
+            if(parseInt(update,10) == parseInt(1,10))
+            {
+                var day = document.entryform.FWDay.value;
+                var month = document.entryform.FWMonth.value;
+
+                    var year = 0;
+                for (var i = 0; i < weekArray.length; i++) {
+                    var innerarray = weekArray[i];
+                        year = innerarray[2];
+                        break;
+                }
+
+                for (j = 0; j < 1; j++) {
+
+                var weekFirstValue =weekArray[0];
+                if(weekFirstValue == "30,12,23")
+                {
+                    var x = document.entryform.FWYear; //document.getElementById("FWYear");
+                        var option = document.createElement("option");
+                        //x.empty();
+                        option.value = "23";
+                        option.text = "2023";
+                        x.add(option);
+                        var option1 = document.createElement("option");
+                        option1.value = "24";
+                        option1.text = "2024";
+                        x.add(option1);
+                        x.selectedIndex = "1";
+                        break;
+                }
+
+                    if (year == "23") {
+                        var yvalue = year;
+                    } else if (year == "24") {
+                        var yvalue = year;
+                    } else {
+                        var yvalue = document.entryform.FWYear.options[j].value
+                        document.entryform.FWYear.options[j].selected = true;
+                    }
+
+
+                    if (year == "23") {
+                        var x = document.entryform.FWYear; //document.getElementById("FWYear");
+                        var option = document.createElement("option");
+                        option.value = "23";
+                        option.text = "2023";
+                        option.value.selected = true;
+                        x.add(option);
+                        break;
+                    }
+
+                    if (year == "24") {
+                        var x = document.entryform.FWYear; //document.getElementById("FWYear");
+                        var option = document.createElement("option");
+                        option.value = "24";
+                        option.text = "2024";
+                        option.value.selected = true;
+                        x.add(option);
+                        break;
+                    }
+                }
+
+                for ( i = 0; i < hoursPerdate.length; i++ )
+                {
+                    var hh1 = new Date();
+                    var h1 = hoursPerdate[i];
+                    var hh1= h1[0];
+                    var hh2 = h1[1];
+                    var hh3 = h1[2];
+                    var hh4 = h1[3];
+                    if(month==h1[0] && day == h1[1] && year == h1[2])
+                    {
+                        updatingHours = parseFloat(hh4)-parseFloat(document.entryform.FWHours.value);
+                        Editeddday = day;
+                    }
+                }
+            }
+        }
+        catch (err)
+        {
+        }
+
+    /*var offset=1;
+     var selectedIndex=0;
+    //alert(projectDataArray.length);
+
+     document.entryform.FWProjectID.options[0] =
+             new Option('-- Select Project --', 'xxx');
+
+     for ( i = 0; i < projectDataArray.length; i++ ) {
+             var projects = projectDataArray[i];
+              var projectId = projects[0];
+              var projectName = projects[1];
+
+            //  alert(activityCodeName);
+
+
+              document.entryform.FWProjectID.options[i + offset] =
+               new Option(projectName, projectId);
+    }
+     document.entryform.FWProjectID.options[selectedIndex].selected = true;*/
+
+    try{
+
+                if(hoursEstimatedDataArray=='')
+                 {
+                     if(document.entryform.FWChargeNum.value == '')
+                     {
+                            document.entryform.FWChargeNum.options[0] =
+                                    new Option('N/A', 'N/A');
+                     }
+                 }
+                 else
+                 {
+                     if(document.entryform.FWChargeNum.value == '')
+                     {
+                            document.entryform.FWChargeNum.options[0] =
+                                    new Option('N/A', 'N/A');
+                     }
+                }
+                changeHoursEstimated(document.entryform.FWActivityCodeID.selectedIndex);
+        }
+        catch(err)
+        {
+
+        }
+
+
+        function changeAct()
+        {
+
+        //alert('comming here');
+            try{
+                            //changeActivityCodes(document.entryform.FWProjectID.selectedIndex);
+                    changeHoursEstimated(document.entryform.FWActivityCodeID.selectedIndex);
+        try{
+                if(!document.entryform.FWisSignificantEvent.checked)
+                {
+
+                        if(document.entryform.FWHoursEstimated.value == '')
+                        {
+                            document.entryform.FWHoursEstimated.value = 'Do Enter';
+                        }
+                }
+            }
+            catch(err)
+            {
+                    //changeActivityCodes(document.entryform.FWProjectID.selectedIndex);
+                    changeHoursEstimated(document.entryform.FWActivityCodeID.selectedIndex);
+
+
+            }
+        }
+        catch(err)
+        {
+            try{
+                    //changeActivityCodes(document.entryform.FWProjectID.selectedIndex);
+                    changeHoursEstimated(document.entryform.FWActivityCodeID.selectedIndex);
+
+
+                    if(document.entryform.FWHoursEstimated.value == '')
+                    {
+                        document.entryform.FWHoursEstimated.value = 'Do Enter';
+                    }
+                }
+                catch(err)
+                {
+                    //To block the scipt error when we are editing Significant entry.
+
+                }
+
+        }
+    }
+
+    try{
+        startRequest(document.entryform.FWProjectID.value);
+    }
+    catch(err)
+    {
+
+    }
+    try{
+        document.entryform.FWHoursEstimated.value = 'Do Enter';
+    }
+    catch(err)
+    {
+    }
+    try{
+        document.getElementById('messageDisplay').style.visibility ="hidden";
+    }
+    catch(err)
+    {
+    }
+
+
+
+</script>
+
+
